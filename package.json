@@ -1,0 +1,11 @@
+{
+  "name": "gpc-mastert",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Agent-first monorepo scaffold",
+  "scripts": {
+    "lint": "echo 'lint placeholder'",
+    "test": "bash scripts/verify-structure.sh",
+    "build": "echo 'build placeholder'"
+  }
+}
