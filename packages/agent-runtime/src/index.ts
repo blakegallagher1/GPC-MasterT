@@ -12,22 +12,19 @@ export type {
 export {
   FetchOpenAIClient,
   ModelRouter,
-  OpenAIAgentRuntime,
   PromptRegistry,
-  RepoToolAdapter,
-  SafetyPolicyEngine,
   parseStructuredOutput,
 } from "./openai-integration.js";
 
+export {
+  OpenAIAgentRuntime,
+  RepoToolAdapter,
+  SafetyPolicyEngine,
+} from "./openai-tools.js";
+
 export type {
-  AgentTaskRequest,
-  AgentTaskResponse,
-  BrowserHarnessInvocation,
-  DocsCheckerInvocation,
-  GitInvocation,
   ModelRoute,
   ModelRouteTable,
-  ObservabilityInvocation,
   OpenAIClient,
   OpenAIMessage,
   OpenAIRequest,
@@ -38,15 +35,24 @@ export type {
   PromptRegistryDocument,
   PromptVersionRef,
   RemediationOutput,
+  ReviewOutput,
+  TaskClass,
+} from "./openai-integration.js";
+
+export type {
+  AgentTaskRequest,
+  AgentTaskResponse,
+  BrowserHarnessInvocation,
+  DocsCheckerInvocation,
+  GitInvocation,
+  ObservabilityInvocation,
   RepoToolInvocationMap,
   RepoToolName,
-  ReviewOutput,
   SafetyPolicyConfig,
-  TaskClass,
   TestsInvocation,
   ToolExecutorMap,
   ToolResult,
-} from "./openai-integration.js";
+} from "./openai-tools.js";
 
 export { GoalPlanner } from "./planner.js";
 export type { ExecutionPlan, PlanStep } from "./planner.js";

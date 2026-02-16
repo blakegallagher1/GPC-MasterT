@@ -16,6 +16,7 @@ jobs:
       review-required: ${{ steps.gate.outputs.review-required }}
       risk-score: ${{ steps.gate.outputs.risk-score }}
       risk-explanation: ${{ steps.gate.outputs.risk-explanation }}
+      needs-browser-evidence: ${{ steps.gate.outputs.needs-browser-evidence }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -75,6 +76,15 @@ jobs:
           fs.appendFileSync(outputFile, `review-required=${reviewRequired}\n`);
           fs.appendFileSync(outputFile, `risk-score=${assessment.score}\n`);
           fs.appendFileSync(outputFile, `risk-explanation=${JSON.stringify(assessment.explanation)}\n`);
+
+          const uiPatterns = (contract.browserEvidence.requiredFlows || []).map(f => `**/${f}/**`);
+          const highTierPatterns = contract.riskTierRules.high.filter(p => p.includes('legal-chat') || p.includes('web') || p.includes('checkout'));
+          const allUiPatterns = [...uiPatterns, ...highTierPatterns, 'apps/web/**'];
+          const needsBrowserEvidence = tier === 'high' && files.some(f => allUiPatterns.some(p => {
+            const re = new RegExp('^' + p.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') + '$');
+            return re.test(f);
+          }));
+          fs.appendFileSync(outputFile, `needs-browser-evidence=${needsBrowserEvidence}\n`);
           EOF
         env:
           CHANGED_FILES: ${{ steps.changes.outputs.files }}
@@ -99,10 +109,11 @@ jobs:
       - name: Verify browser evidence for high-risk PRs
         env:
           RISK_TIER: ${{ needs.preflight.outputs.risk-tier }}
+          NEEDS_BROWSER_EVIDENCE: ${{ needs.preflight.outputs.needs-browser-evidence }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [[ "$RISK_TIER" != "high" ]]; then
-            echo "Low-risk PR: browser evidence is not required."
+          if [[ "$NEEDS_BROWSER_EVIDENCE" != "true" ]]; then
+            echo "Browser evidence is not required for this PR (tier=${RISK_TIER}, needs-browser-evidence=${NEEDS_BROWSER_EVIDENCE})."
             exit 0
           fi
 

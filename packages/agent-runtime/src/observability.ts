@@ -78,7 +78,7 @@ export function emitStructuredLog(
     ...extra,
   };
 
-  console.log(JSON.stringify(entry));
+  process.stdout.write(`${JSON.stringify(entry)}\n`);
 }
 
 export function markSpanOk(): void {

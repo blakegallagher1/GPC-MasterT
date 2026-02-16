@@ -207,26 +207,19 @@ export class TaskRunner {
     }
   }
 
-  private async writeMemory(kind: MemoryKind, content: string, run: TaskRun, metadata: Record<string, unknown>): Promise<void> {
+  private async writeMemory(kind: MemoryKind, content: string, run: TaskRun, meta: Record<string, unknown>): Promise<void> {
     if (!this.memoryStore) return;
     await this.memoryStore.save({
-      id: randomUUID(),
-      repo: this.repoId,
-      pathScope: this.pathScope,
-      kind,
-      content,
-      tags: [run.taskName, run.status],
-      metadata,
-      createdAt: new Date().toISOString(),
+      id: randomUUID(), repo: this.repoId, pathScope: this.pathScope, kind, content,
+      tags: [run.taskName, run.status], metadata: meta, createdAt: new Date().toISOString(),
     });
   }
 
   private async resumePendingRuns(): Promise<void> {
-    const resumable = Array.from(this.runs.values()).filter((run) => run.status === "queued" || run.status === "running");
-    for (const run of resumable) {
+    for (const run of this.runs.values()) {
+      if (run.status !== "queued" && run.status !== "running") continue;
       const def = this.definitions.get(run.taskName);
-      if (!def) continue;
-      void this.executeRun(run, def, run.input);
+      if (def) void this.executeRun(run, def, run.input);
     }
   }
 

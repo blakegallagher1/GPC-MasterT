@@ -3,13 +3,16 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import {
   ModelRouter,
-  OpenAIAgentRuntime,
   PromptRegistry,
-  RepoToolAdapter,
-  SafetyPolicyEngine,
   parseStructuredOutput,
 } from "./openai-integration.js";
-import type { OpenAIClient, OpenAIRequest, OpenAIResponse, ToolExecutorMap } from "./openai-integration.js";
+import {
+  OpenAIAgentRuntime,
+  RepoToolAdapter,
+  SafetyPolicyEngine,
+} from "./openai-tools.js";
+import type { OpenAIClient, OpenAIRequest, OpenAIResponse } from "./openai-integration.js";
+import type { ToolExecutorMap } from "./openai-tools.js";
 
 class DeterministicOpenAIClient implements OpenAIClient {
   private readonly fixtures = new Map<string, string>([
