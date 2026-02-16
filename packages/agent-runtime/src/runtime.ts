@@ -160,6 +160,11 @@ export class TaskRunner {
 
     runtimeTelemetry.taskRunsTotal.add(1, { task_name: run.taskName });
 
+    const log = (message: string, level: TaskLogEntry["level"] = "info") => {
+      const record: TaskLogEntry = { timestamp: new Date().toISOString(), level, message };
+      run.logs.push(record);
+    };
+
     const logRetryState = (state: RetryAttemptState) => {
       if (state.failureClass) {
         log(
