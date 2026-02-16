@@ -23,8 +23,14 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: pnpm install
+
+      - name: Build packages
+        run: pnpm -r build
 
       - name: Compute changed files
         id: changes
@@ -79,8 +85,14 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: pnpm install
+
+      - name: Build packages
+        run: pnpm -r build
 
       - name: Run CI checks
         run: |
