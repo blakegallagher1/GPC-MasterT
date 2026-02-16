@@ -16,7 +16,6 @@
     "harness:ui:capture-browser-evidence": "node scripts/harness-ui-capture.mjs",
     "harness:ui:verify-browser-evidence": "node scripts/harness-ui-verify.mjs",
     "harness:risk-tier": "bash scripts/harness-risk-tier.sh",
-<<<<<<< HEAD
     "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh",
     "docs:integrity": "pnpm dlx tsx scripts/check-docs-integrity.ts --max-age-days 90",
     "eval:run": "pnpm --filter @gpc/cli build && node tools/cli/dist/index.js eval run --suite tests/evals/suites/core.json --out tests/evals/reports/latest.json",
@@ -31,12 +30,7 @@
     "eslint": "^9.34.0",
     "@eslint/js": "^9.34.0",
     "@typescript-eslint/parser": "^8.41.0",
-    "globals": "^15.9.0
-=======
-    "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh"
-  },
-  "devDependencies": {
+    "globals": "^15.9.0",
     "playwright": "^1.55.0"
->>>>>>> origin/pr18
   }
 }

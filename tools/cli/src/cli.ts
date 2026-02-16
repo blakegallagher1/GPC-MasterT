@@ -116,10 +116,17 @@ export function parseArgs(argv: string[]): { command: string; args: string[] } {
     return { command: "eval:run", args: args.slice(2) };
   }
 
+  if (args[0] === "obs" && args[1] === "query") {
+    return { command: "obs:query", args: args.slice(2) };
+  }
+
+  if (args[0] === "obs") {
+    return { command: "obs", args: args.slice(1) };
+  }
+
   return { command: args[0] ?? "help", args: args.slice(1) };
 }
 
-<<<<<<< HEAD
 function getFlagValue(args: string[], name: string): string | undefined {
   const index = args.findIndex((a) => a === name);
   if (index === -1) return undefined;
@@ -186,10 +193,14 @@ export function executeEvalRun(repoRoot: string, args: string[]): EvalReport {
   return report;
 }
 
-/** Main CLI entry point. Returns exit code. */
-export function run(argv: string[], repoRoot: string): number {
-=======
 export type ObsQueryType = "logs" | "metrics" | "traces";
+
+export interface ObsQueryResult {
+  type: ObsQueryType;
+  endpoint: string;
+  query: string;
+  note: string;
+}
 
 export function parseObsArgs(args: string[]): { type: ObsQueryType; query?: string; since?: string } {
   if (args[0] !== "query") {
@@ -210,6 +221,36 @@ export function parseObsArgs(args: string[]): { type: ObsQueryType; query?: stri
     query: queryFlag?.split("=")[1],
     since: sinceFlag?.split("=")[1],
   };
+}
+
+/**
+ * Map a requested query type to a local observability endpoint.
+ */
+export function buildObsQuery(queryType: string): ObsQueryResult {
+  const table: Record<ObsQueryType, ObsQueryResult> = {
+    traces: {
+      type: "traces",
+      endpoint: "http://localhost:3200",
+      query: "{}",
+      note: "Tempo/Jaeger local traces",
+    },
+    metrics: {
+      type: "metrics",
+      endpoint: "http://localhost:9090",
+      query: "up",
+      note: "Prometheus local metrics",
+    },
+    logs: {
+      type: "logs",
+      endpoint: "http://localhost:3100",
+      query: '{service_name="agent-runtime"}',
+      note: "Loki local logs",
+    },
+  };
+
+  const key = queryType as ObsQueryType;
+  if (table[key]) return table[key];
+  return { type: "traces", endpoint: "http://localhost:3200", query: "{}", note: "Fallback default (traces)" };
 }
 
 async function fetchJson(url: string): Promise<unknown> {
@@ -240,7 +281,6 @@ export async function runObsQuery(type: ObsQueryType, query?: string, since = "1
 
 /** Main CLI entry point. Returns exit code. */
 export async function run(argv: string[], repoRoot: string): Promise<number> {
->>>>>>> origin/pr17
   const { command, args } = parseArgs(argv);
 
   switch (command) {
@@ -267,46 +307,42 @@ export async function run(argv: string[], repoRoot: string): Promise<number> {
       return 0;
     }
 
-<<<<<<< HEAD
     case "eval:run": {
       const report = executeEvalRun(repoRoot, args);
       emit("info", "cli.eval.complete", "Eval suite completed.", { report });
       return 0;
-=======
+    }
+
+    case "obs:query": {
+      const typeArg = args.find((a) => a.startsWith("--type="))?.split("=")[1] ?? "traces";
+      const result = buildObsQuery(typeArg);
+      emit("info", "cli.obs.query", "Observability query resolved.", { result });
+      return 0;
+    }
+
     case "obs": {
       try {
         const parsed = parseObsArgs(args);
-        const result = await runObsQuery(parsed.type, parsed.query, parsed.since);
-        console.log(JSON.stringify(result, null, 2));
+        const obsResult = await runObsQuery(parsed.type, parsed.query, parsed.since);
+        emit("info", "cli.obs.result", "Observability query completed.", { result: obsResult });
         return 0;
       } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
+        emit("error", "cli.obs.error", err instanceof Error ? err.message : String(err));
         return 1;
       }
->>>>>>> origin/pr17
     }
 
     case "help":
     default:
-<<<<<<< HEAD
       emit("info", "cli.help", "CLI usage output.", {
         usage: [
-          "gpc validate    Validate repository structure",
-          "gpc skills      List available agent skills",
-          "gpc eval run    Execute evaluation suite and emit JSON report",
-          "gpc help        Show this help message",
+          "gpc validate      Validate repository structure",
+          "gpc skills         List available agent skills",
+          "gpc eval run       Execute evaluation suite and emit JSON report",
+          "gpc obs query      Query local observability stack",
+          "gpc help           Show this help message",
         ],
       });
-=======
-      console.log(`gpc — GPC Monorepo CLI
-
-Usage:
-  gpc validate    Validate repository structure
-  gpc skills      List available agent skills
-  gpc obs query --type=<logs|metrics|traces> [--query=<expr>] [--since=<window>]
-  gpc help        Show this help message
-`);
->>>>>>> origin/pr17
       return 0;
   }
 }
