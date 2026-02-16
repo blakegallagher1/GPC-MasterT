@@ -16,6 +16,9 @@
     "harness:ui:capture-browser-evidence": "echo 'browser evidence capture placeholder'",
     "harness:ui:verify-browser-evidence": "echo 'browser evidence verify placeholder'",
     "harness:risk-tier": "bash scripts/harness-risk-tier.sh",
-    "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh"
+    "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh",
+    "eval:run": "pnpm --filter @gpc/cli build && node tools/cli/dist/index.js eval run --suite tests/evals/suites/core.json --out tests/evals/reports/latest.json",
+    "eval:gate": "node scripts/eval-release-gate.mjs --report tests/evals/reports/latest.json --baseline docs/analysis/eval-baseline.json --thresholds tests/evals/release-gate.thresholds.json",
+    "eval:trends": "node scripts/publish-eval-trends.mjs --report tests/evals/reports/latest.json --baseline docs/analysis/eval-baseline.json --out docs/analysis/eval-trends.md"
   }
 }

@@ -1,0 +1,11 @@
+{
+  "suite": "core-agent-benchmarks",
+  "generatedAt": "2026-01-01T00:00:00.000Z",
+  "metrics": {
+    "passRate": 1,
+    "retriesToSuccess": 0.5,
+    "policyViolations": 3,
+    "meanTaskDurationMs": 402.5,
+    "regressionDelta": 0.01
+  }
+}
