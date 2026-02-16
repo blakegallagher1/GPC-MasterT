@@ -9,6 +9,10 @@
     "start": "node dist/index.js",
     "test": "node --test dist/server.test.js"
   },
+  "dependencies": {
+    "@gpc/agent-runtime": "workspace:*",
+    "@opentelemetry/api": "^1.9.0"
+  },
   "devDependencies": {
     "@types/node": "^25.2.3",
     "typescript": "^5.7.0"

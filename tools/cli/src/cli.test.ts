@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseArgs, validateStructure, discoverSkills } from "./cli.js";
+import { parseArgs, validateStructure, discoverSkills, parseObsArgs } from "./cli.js";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -54,5 +54,17 @@ describe("discoverSkills", () => {
     } finally {
       rmSync(tmp, { recursive: true });
     }
+  });
+});
+
+describe("parseObsArgs", () => {
+  it("parses obs query options", () => {
+    const result = parseObsArgs(["query", "--type=metrics", "--query=up"]);
+    assert.equal(result.type, "metrics");
+    assert.equal(result.query, "up");
+  });
+
+  it("throws on unknown type", () => {
+    assert.throws(() => parseObsArgs(["query", "--type=unknown"]));
   });
 });

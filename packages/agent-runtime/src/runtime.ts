@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { trace } from "@opentelemetry/api";
+import { emitStructuredLog, markSpanError, markSpanOk, runtimeTelemetry } from "./observability.js";
 
 /** Possible statuses a task can be in. */
 export type TaskStatus = "queued" | "running" | "done" | "failed";
@@ -31,6 +33,8 @@ export interface TaskRun<TOutput = unknown> {
   createdAt: string;
   updatedAt: string;
 }
+
+const runtimeTracer = trace.getTracer("gpc.agent-runtime", "0.1.0");
 
 /**
  * Registry of available task definitions and their run history.
@@ -90,22 +94,37 @@ export class TaskRunner {
   }
 
   private async executeRun(run: TaskRun, def: TaskDefinition, input: unknown): Promise<void> {
+    const start = process.hrtime.bigint();
     run.status = "running";
     run.updatedAt = new Date().toISOString();
 
-    const log = (message: string, level: TaskLogEntry["level"] = "info") => {
-      run.logs.push({ timestamp: new Date().toISOString(), level, message });
-    };
+    runtimeTelemetry.taskRunsTotal.add(1, { task_name: run.taskName });
 
-    try {
-      const result = await def.execute(input, log);
-      run.result = result;
-      run.status = "done";
-    } catch (err) {
-      run.error = err instanceof Error ? err.message : String(err);
-      run.status = "failed";
-    } finally {
-      run.updatedAt = new Date().toISOString();
-    }
+    await runtimeTracer.startActiveSpan("task.run", { attributes: { "task.name": run.taskName, "task.id": run.id } }, async () => {
+      const log = (message: string, level: TaskLogEntry["level"] = "info") => {
+        const record = { timestamp: new Date().toISOString(), level, message };
+        run.logs.push(record);
+        emitStructuredLog("agent-runtime", level, message, { taskName: run.taskName, runId: run.id });
+      };
+
+      try {
+        const result = await def.execute(input, log);
+        run.result = result;
+        run.status = "done";
+        markSpanOk();
+      } catch (err) {
+        run.error = err instanceof Error ? err.message : String(err);
+        run.status = "failed";
+        runtimeTelemetry.taskErrorsTotal.add(1, { task_name: run.taskName });
+        markSpanError(err);
+      } finally {
+        run.updatedAt = new Date().toISOString();
+        const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+        runtimeTelemetry.taskDurationMs.record(durationMs, {
+          task_name: run.taskName,
+          status: run.status,
+        });
+      }
+    });
   }
 }
