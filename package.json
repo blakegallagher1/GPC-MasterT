@@ -23,12 +23,13 @@
     "eval:trends": "node scripts/publish-eval-trends.mjs --report tests/evals/reports/latest.json --baseline docs/analysis/eval-baseline.json --out docs/analysis/eval-trends.md",
     "lint:eslint": "eslint .",
     "lint:custom": "node scripts/run-custom-lints.mjs",
-    "test:lint-rules": "node --test scripts/custom-lint-rules.test.mjs"
+    "test:lint-rules": "node --test scripts/custom-lint-rules.test.mjs",
+    "security-scan": "node scripts/security-scan.mjs"
   },
   "devDependencies": {
     "eslint": "^9.34.0",
     "@eslint/js": "^9.34.0",
     "@typescript-eslint/parser": "^8.41.0",
-    "globals": "^15.9.0"
+    "globals": "^15.9.0
   }
 }
