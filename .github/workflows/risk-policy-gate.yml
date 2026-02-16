@@ -60,7 +60,6 @@ jobs:
           console.log(`Review agent required: ${reviewRequired}`);
           console.log(`Risk explanation: ${JSON.stringify(assessment.explanation)}`);
 
-          // Docs-drift assertion
           try {
             assertDocsDriftRules(files, contract);
             console.log('Docs-drift check: passed');
@@ -69,7 +68,6 @@ jobs:
             process.exitCode = 1;
           }
 
-          // Write outputs for downstream jobs
           const fs = await import('node:fs');
           const outputFile = process.env.GITHUB_OUTPUT;
           fs.appendFileSync(outputFile, `risk-tier=${tier}\n`);
@@ -81,8 +79,39 @@ jobs:
         env:
           CHANGED_FILES: ${{ steps.changes.outputs.files }}
 
-  ci-fanout:
+  browser-evidence-gate:
+    name: Browser Evidence
     needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Verify browser evidence for high-risk PRs
+        env:
+          RISK_TIER: ${{ needs.preflight.outputs.risk-tier }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$RISK_TIER" != "high" ]]; then
+            echo "Low-risk PR: browser evidence is not required."
+            exit 0
+          fi
+
+          npm run harness:ui:verify-browser-evidence -- \
+            --head-sha "$PR_HEAD_SHA" \
+            --manifest "artifacts/browser-evidence/$PR_HEAD_SHA/manifest.json"
+
+  ci-fanout:
+    needs: [preflight, browser-evidence-gate]
     if: success()
     runs-on: ubuntu-latest
     steps:
