@@ -29,3 +29,20 @@ production regression → harness-gap issue → case added → SLA tracked
 ```
 
 Convert incidents into harness test cases to grow long-term coverage.
+
+## Security check remediation loop
+
+When `npm run security-scan` fails in CI:
+
+1. Download `security-scan-report` artifact and inspect `artifacts/security/security-scan-report.json`.
+2. Review `artifacts/security/security-scan-summary.md` in the job summary for quick triage.
+3. Remediate findings by priority:
+   - **npm audit findings**: update/replace vulnerable packages, then rerun scan.
+   - **semgrep findings**: patch the flagged code paths and add/extend tests.
+4. If a temporary exception is required, add an `ignores` entry in `security/security-scan-policy.json` with:
+   - tool + finding identifier (`id` or `ruleId` + optional `path`),
+   - remediation ticket in `reason`,
+   - a near-term `expiresOn` date.
+5. Expired ignores fail the scan by design. Renew only with explicit owner approval and updated remediation ETA.
+6. Rerun `npm run security-scan`, then rerun full CI gates (`lint`, `test`, `build`, `security-scan`) before merge.
+
