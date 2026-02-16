@@ -33,11 +33,17 @@ export interface BrowserEvidenceConfig {
   maxAgeDays: number;
 }
 
-export interface ReviewAgentConfig {
+export interface ReviewAgentProviderConfig {
+  id: string;
   name: string;
   rerunWorkflow: string;
   autoResolveWorkflow: string;
+}
+
+export interface ReviewAgentConfig {
+  name: string;
   timeoutMinutes: number;
+  providers: ReviewAgentProviderConfig[];
 }
 
 export interface RemediationAgentConfig {
@@ -101,6 +107,20 @@ export function validateContract(data: unknown): asserts data is RiskPolicyContr
     const entry = policy[tier] as Record<string, unknown> | undefined;
     if (!entry || !Array.isArray(entry["requiredChecks"])) {
       throw new Error(`mergePolicy.${tier} must contain requiredChecks array`);
+    }
+  }
+
+  const reviewAgent = obj["reviewAgent"] as Record<string, unknown>;
+  if (!Array.isArray(reviewAgent["providers"]) || reviewAgent["providers"].length === 0) {
+    throw new Error("reviewAgent.providers must be a non-empty array");
+  }
+
+  for (const provider of reviewAgent["providers"] as unknown[]) {
+    const item = provider as Record<string, unknown>;
+    for (const key of ["id", "name", "rerunWorkflow", "autoResolveWorkflow"] as const) {
+      if (typeof item[key] !== "string" || item[key].trim().length === 0) {
+        throw new Error(`reviewAgent.providers[*].${key} must be a non-empty string`);
+      }
     }
   }
 }
