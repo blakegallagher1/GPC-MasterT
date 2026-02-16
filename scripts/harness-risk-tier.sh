@@ -9,12 +9,17 @@ set -euo pipefail
 #
 # If no files are provided, uses git diff against main to detect changes.
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(cd ""$(dirname "$0")"/.." && pwd)"
 
 if [[ $# -gt 0 ]]; then
   FILES="$*"
 else
-  FILES=$(git diff --name-only origin/main...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
+  # Try to get changed files, handling cases where HEAD~1 doesn't exist
+  if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+    FILES=$(git diff --name-only origin/main...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
+  else
+    FILES=$(git diff --name-only origin/main...HEAD 2>/dev/null || echo "")
+  fi
 fi
 
 if [[ -z "$FILES" ]]; then
