@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import { strict as assert } from "node:assert";
 import { validateContract } from "./contract.js";
-import { computeRiskTier, computeRequiredChecks, needsCodeReviewAgent, globToRegExp, matchesAny } from "./risk-tier.js";
+import { computeRiskAssessment, computeRiskTier, computeRequiredChecks, needsCodeReviewAgent, globToRegExp, matchesAny } from "./risk-tier.js";
 import { assertDocsDriftRules } from "./docs-drift.js";
 import { assertCheckForCurrentHead, assertRequiredChecksSuccessful, assertReviewCleanForHead } from "./sha-discipline.js";
 import { buildRerunComment, hasExistingRerunRequest, maybeRerunComment } from "./rerun-writer.js";
@@ -148,6 +148,65 @@ describe("computeRiskTier", () => {
       computeRiskTier(["README.md", "lib/tools/parser.ts"], VALID_CONTRACT),
       "high",
     );
+  });
+});
+
+
+
+describe("computeRiskAssessment", () => {
+  const metadata = {
+    version: "1",
+    recentFlakyTests: [
+      {
+        pattern: "tests/smoke/**",
+        weight: 10,
+        reason: "smoke flake",
+      },
+    ],
+    incidentTaggedFiles: [
+      {
+        pattern: "app/api/legal-chat/**",
+        weight: 20,
+        reason: "incident area",
+      },
+    ],
+    priorRollbackAreas: [
+      {
+        pattern: ".github/workflows/**",
+        weight: 12,
+        reason: "prior rollback",
+      },
+    ],
+  };
+
+  it("scores deterministically and returns high tier when threshold is met", () => {
+    const changed = [
+      "tests/smoke/run.sh",
+      "app/api/legal-chat/route.ts",
+      ".github/workflows/ci.yml",
+    ];
+
+    const first = computeRiskAssessment(changed, VALID_CONTRACT, metadata);
+    const second = computeRiskAssessment([...changed].reverse(), VALID_CONTRACT, metadata);
+
+    assert.equal(first.score, 147);
+    assert.equal(first.tier, "high");
+    assert.deepEqual(first, second);
+  });
+
+  it("returns transparent explanation with triggered categories", () => {
+    const result = computeRiskAssessment(
+      ["app/api/legal-chat/route.ts", "tests/smoke/run.sh"],
+      VALID_CONTRACT,
+      metadata,
+    );
+
+    const categories = result.explanation.triggeredSignals.map((s) => s.category);
+    assert.ok(categories.includes("contract-rule"));
+    assert.ok(categories.includes("semantic-public-api"));
+    assert.ok(categories.includes("history-incidents"));
+    assert.ok(categories.includes("history-flaky-tests"));
+    assert.ok(result.explanation.scoreBreakdown.every((entry) => entry.includes("(+")));
   });
 });
 

@@ -19,6 +19,12 @@ export {
 } from "./contract.js";
 
 export {
+  type HistoricalSignalEntry,
+  type HistoricalRiskMetadata,
+  type RiskExplanationSignal,
+  type RiskAssessment,
+  computeRiskAssessment,
+  loadHistoricalRiskMetadata,
   computeRiskTier,
   computeRequiredChecks,
   needsCodeReviewAgent,

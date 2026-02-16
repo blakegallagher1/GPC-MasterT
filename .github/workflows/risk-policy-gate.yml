@@ -14,6 +14,8 @@ jobs:
       risk-tier: ${{ steps.gate.outputs.risk-tier }}
       required-checks: ${{ steps.gate.outputs.required-checks }}
       review-required: ${{ steps.gate.outputs.review-required }}
+      risk-score: ${{ steps.gate.outputs.risk-score }}
+      risk-explanation: ${{ steps.gate.outputs.risk-explanation }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,17 +44,21 @@ jobs:
         id: gate
         run: |
           node --input-type=module <<'EOF'
-          import { loadContract, computeRiskTier, computeRequiredChecks, needsCodeReviewAgent, assertDocsDriftRules } from './packages/config/dist/index.js';
+          import { loadContract, loadHistoricalRiskMetadata, computeRiskAssessment, computeRequiredChecks, needsCodeReviewAgent, assertDocsDriftRules } from './packages/config/dist/index.js';
 
           const files = process.env.CHANGED_FILES.split(',').filter(Boolean);
           const contract = await loadContract(process.cwd());
-          const tier = computeRiskTier(files, contract);
-          const checks = computeRequiredChecks(files, contract);
-          const reviewRequired = needsCodeReviewAgent(files, contract);
+          const metadata = await loadHistoricalRiskMetadata(process.cwd());
+          const assessment = computeRiskAssessment(files, contract, metadata);
+          const tier = assessment.tier;
+          const checks = computeRequiredChecks(files, contract, metadata);
+          const reviewRequired = needsCodeReviewAgent(files, contract, metadata);
 
+          console.log(`Risk score: ${assessment.score} (threshold=${assessment.threshold})`);
           console.log(`Risk tier: ${tier}`);
           console.log(`Required checks: ${checks.join(', ')}`);
           console.log(`Review agent required: ${reviewRequired}`);
+          console.log(`Risk explanation: ${JSON.stringify(assessment.explanation)}`);
 
           // Docs-drift assertion
           try {
@@ -69,6 +75,8 @@ jobs:
           fs.appendFileSync(outputFile, `risk-tier=${tier}\n`);
           fs.appendFileSync(outputFile, `required-checks=${JSON.stringify(checks)}\n`);
           fs.appendFileSync(outputFile, `review-required=${reviewRequired}\n`);
+          fs.appendFileSync(outputFile, `risk-score=${assessment.score}\n`);
+          fs.appendFileSync(outputFile, `risk-explanation=${JSON.stringify(assessment.explanation)}\n`);
           EOF
         env:
           CHANGED_FILES: ${{ steps.changes.outputs.files }}
@@ -97,6 +105,7 @@ jobs:
         run: |
           echo "Risk tier: ${{ needs.preflight.outputs.risk-tier }}"
           echo "Required checks: ${{ needs.preflight.outputs.required-checks }}"
+          echo "Risk score: ${{ needs.preflight.outputs.risk-score }}"
           npm run lint
           npm test
           npm run build
