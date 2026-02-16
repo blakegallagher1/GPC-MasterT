@@ -77,13 +77,13 @@ jobs:
           fs.appendFileSync(outputFile, `risk-score=${assessment.score}\n`);
           fs.appendFileSync(outputFile, `risk-explanation=${JSON.stringify(assessment.explanation)}\n`);
 
-          const uiPatterns = (contract.browserEvidence.requiredFlows || []).map(f => `**/${f}/**`);
-          const highTierPatterns = contract.riskTierRules.high.filter(p => p.includes('legal-chat') || p.includes('web') || p.includes('checkout'));
-          const allUiPatterns = [...uiPatterns, ...highTierPatterns, 'apps/web/**'];
-          const needsBrowserEvidence = tier === 'high' && files.some(f => allUiPatterns.some(p => {
-            const re = new RegExp('^' + p.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') + '$');
-            return re.test(f);
-          }));
+          const uiFlowPatterns = (contract.browserEvidence.requiredFlows || []).flatMap(f => [`**/${f}/**`, `**/${f}`]);
+          const uiHighTierPatterns = contract.riskTierRules.high.filter(p =>
+            /\blegal.chat\b/.test(p) || /\bweb\b/.test(p) || /\bcheckout\b/.test(p)
+          );
+          const allUiPatterns = [...uiFlowPatterns, ...uiHighTierPatterns, 'apps/web/**'];
+          const { matchesAny } = await import('./packages/config/dist/index.js');
+          const needsBrowserEvidence = tier === 'high' && files.some(f => matchesAny(f, allUiPatterns));
           fs.appendFileSync(outputFile, `needs-browser-evidence=${needsBrowserEvidence}\n`);
           EOF
         env:
