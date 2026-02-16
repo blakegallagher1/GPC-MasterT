@@ -1,0 +1,102 @@
+name: risk-policy-gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      risk-tier: ${{ steps.gate.outputs.risk-tier }}
+      required-checks: ${{ steps.gate.outputs.required-checks }}
+      review-required: ${{ steps.gate.outputs.review-required }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: pnpm -r build
+
+      - name: Compute changed files
+        id: changes
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | tr '\n' ',')
+          echo "files=${FILES}" >> "$GITHUB_OUTPUT"
+
+      - name: Run risk-policy gate
+        id: gate
+        run: |
+          node --input-type=module <<'EOF'
+          import { loadContract, computeRiskTier, computeRequiredChecks, needsCodeReviewAgent, assertDocsDriftRules } from './packages/config/dist/index.js';
+
+          const files = process.env.CHANGED_FILES.split(',').filter(Boolean);
+          const contract = await loadContract(process.cwd());
+          const tier = computeRiskTier(files, contract);
+          const checks = computeRequiredChecks(files, contract);
+          const reviewRequired = needsCodeReviewAgent(files, contract);
+
+          console.log(`Risk tier: ${tier}`);
+          console.log(`Required checks: ${checks.join(', ')}`);
+          console.log(`Review agent required: ${reviewRequired}`);
+
+          // Docs-drift assertion
+          try {
+            assertDocsDriftRules(files, contract);
+            console.log('Docs-drift check: passed');
+          } catch (err) {
+            console.error(`Docs-drift check: FAILED — ${err.message}`);
+            process.exitCode = 1;
+          }
+
+          // Write outputs for downstream jobs
+          const fs = await import('node:fs');
+          const outputFile = process.env.GITHUB_OUTPUT;
+          fs.appendFileSync(outputFile, `risk-tier=${tier}\n`);
+          fs.appendFileSync(outputFile, `required-checks=${JSON.stringify(checks)}\n`);
+          fs.appendFileSync(outputFile, `review-required=${reviewRequired}\n`);
+          EOF
+        env:
+          CHANGED_FILES: ${{ steps.changes.outputs.files }}
+
+  ci-fanout:
+    needs: preflight
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: pnpm -r build
+
+      - name: Run CI checks
+        run: |
+          echo "Risk tier: ${{ needs.preflight.outputs.risk-tier }}"
+          echo "Required checks: ${{ needs.preflight.outputs.required-checks }}"
+          npm run lint
+          npm test
+          npm run build

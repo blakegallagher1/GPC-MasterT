@@ -1,0 +1,72 @@
+{
+  "version": "1",
+  "riskTierRules": {
+    "high": [
+      "app/api/legal-chat/**",
+      "lib/tools/**",
+      "db/schema.ts",
+      "packages/config/src/contract.ts",
+      ".github/workflows/**"
+    ],
+    "low": ["**"]
+  },
+  "mergePolicy": {
+    "high": {
+      "requiredChecks": [
+        "risk-policy-gate",
+        "harness-smoke",
+        "Browser Evidence",
+        "CI Pipeline"
+      ],
+      "requireCodeReviewAgent": true,
+      "requireBrowserEvidence": true
+    },
+    "low": {
+      "requiredChecks": ["risk-policy-gate", "CI Pipeline"],
+      "requireCodeReviewAgent": false,
+      "requireBrowserEvidence": false
+    }
+  },
+  "docsDriftRules": {
+    "controlPlanePaths": [
+      "risk-policy.contract.json",
+      ".github/workflows/**",
+      "AGENTS.md"
+    ],
+    "requiredDocPaths": [
+      "docs/playbooks/**",
+      "docs/operating-model/**",
+      "observability/runbooks/**"
+    ]
+  },
+  "browserEvidence": {
+    "requiredFlows": [
+      "legal-chat-login",
+      "legal-chat-query"
+    ],
+    "requiredFields": [
+      "entrypoint",
+      "accountIdentity",
+      "timestamp",
+      "flowName"
+    ],
+    "maxAgeDays": 7
+  },
+  "reviewAgent": {
+    "name": "Greptile",
+    "rerunWorkflow": "greptile-rerun.yml",
+    "autoResolveWorkflow": "greptile-auto-resolve-threads.yml",
+    "timeoutMinutes": 20
+  },
+  "remediationAgent": {
+    "name": "Codex Action",
+    "enabled": true,
+    "pinModel": true,
+    "skipStaleComments": true
+  },
+  "harnessGapLoop": {
+    "enabled": true,
+    "issueLabel": "harness-gap",
+    "slaTracking": true
+  }
+}
