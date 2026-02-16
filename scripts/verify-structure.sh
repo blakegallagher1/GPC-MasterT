@@ -3,15 +3,18 @@ set -euo pipefail
 
 required_paths=(
   "AGENTS.md"
+  "risk-policy.contract.json"
   "apps/web"
   "apps/api"
   "packages/agent-runtime"
+  "packages/config/src"
   "infra/terraform/environments/dev"
   "infra/kubernetes/overlays/prod"
-  "tools/review-loop"
+  "tools/review-loop/src"
   "skills/browser-qa"
   "observability/dashboards"
   "tests/e2e"
+  "tests/contract"
   "docs/playbooks"
 )
 

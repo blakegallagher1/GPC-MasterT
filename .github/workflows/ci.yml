@@ -13,7 +13,23 @@ jobs:
       - name: Show structure
         run: |
           test -f AGENTS.md
+          test -f risk-policy.contract.json
           test -d apps
           test -d infra
           test -d tools
           test -d observability
+          test -d packages/config/src
+          test -d tools/review-loop/src
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install dependencies
+        run: pnpm install
+      - name: Verify structure
+        run: npm test
+      - name: Build
+        run: pnpm -r build
+      - name: Run package tests
+        run: pnpm -r test

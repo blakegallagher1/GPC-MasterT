@@ -6,6 +6,14 @@
   "scripts": {
     "lint": "echo 'lint placeholder'",
     "test": "bash scripts/verify-structure.sh",
-    "build": "echo 'build placeholder'"
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build",
+    "build:ci": "pnpm -r build",
+    "harness:legal-chat:smoke": "bash scripts/harness-legal-chat-smoke.sh",
+    "harness:ui:pre-pr": "bash scripts/harness-ui-pre-pr.sh",
+    "harness:ui:capture-browser-evidence": "echo 'browser evidence capture placeholder'",
+    "harness:ui:verify-browser-evidence": "echo 'browser evidence verify placeholder'",
+    "harness:risk-tier": "bash scripts/harness-risk-tier.sh",
+    "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh"
   }
 }
