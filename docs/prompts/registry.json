@@ -1,0 +1,29 @@
+{
+  "mappings": [
+    {
+      "taskClass": "planning",
+      "prompt": { "id": "planning", "version": "v1" },
+      "rollbackVersion": "v1"
+    },
+    {
+      "taskClass": "code_edit",
+      "prompt": { "id": "code-edit", "version": "v1" },
+      "rollbackVersion": "v1"
+    },
+    {
+      "taskClass": "review",
+      "prompt": { "id": "review", "version": "v1" },
+      "rollbackVersion": "v1"
+    },
+    {
+      "taskClass": "summarization",
+      "prompt": { "id": "summarization", "version": "v1" },
+      "rollbackVersion": "v1"
+    },
+    {
+      "taskClass": "remediation",
+      "prompt": { "id": "remediation", "version": "v1" },
+      "rollbackVersion": "v1"
+    }
+  ]
+}
