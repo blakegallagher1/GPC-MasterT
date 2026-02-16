@@ -8,6 +8,24 @@ importers:
 
   .: {}
 
+  apps/api:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.2.3
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/agent-runtime:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.2.3
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/config:
     devDependencies:
       '@types/node':
@@ -15,6 +33,15 @@ importers:
         version: 25.2.3
       typescript:
         specifier: ^5.4.0
+        version: 5.9.3
+
+  tools/cli:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.2.3
+      typescript:
+        specifier: ^5.7.0
         version: 5.9.3
 
   tools/review-loop:

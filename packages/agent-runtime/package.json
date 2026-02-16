@@ -1,0 +1,16 @@
+{
+  "name": "@gpc/agent-runtime",
+  "version": "0.1.0",
+  "description": "Agent task execution runtime with structured status tracking and logging",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/runtime.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "typescript": "^5.7.0"
+  }
+}
