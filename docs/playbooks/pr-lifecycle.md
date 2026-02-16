@@ -4,7 +4,8 @@
 2. Implement changes in scoped branch/worktree.
 3. Run local checks (`lint`, `test`, `build`).
 4. **Risk-tier gate** (`npm run harness:risk-tier`):
-   - Compute risk tier from changed files against `risk-policy.contract.json`.
+   - Compute adaptive risk score/tier from changed files using contract, semantic signals, and `risk-signals.metadata.json` historical inputs.
+   - Emit risk explanation payload (triggered signals + score breakdown) for CI auditability.
    - Verify docs-drift rules (control-plane changes require doc updates).
    - For high-tier changes: require code-review-agent clean state at current head SHA.
    - For UI/flow changes: require browser evidence (`npm run harness:ui:pre-pr`).
@@ -29,3 +30,8 @@ production regression → harness-gap issue → case added → SLA tracked
 ```
 
 Convert incidents into harness test cases to grow long-term coverage.
+
+## Observability impact
+
+- CI now logs `risk-score` and serialized risk explanation output so reviewers can trace why a PR was classified as `high` or `low`.
+- Keep `risk-signals.metadata.json` current with flaky/incident/rollback tags to preserve signal quality over time.

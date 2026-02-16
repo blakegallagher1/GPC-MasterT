@@ -1,0 +1,39 @@
+{
+  "version": "1",
+  "recentFlakyTests": [
+    {
+      "pattern": "tests/smoke/**",
+      "weight": 10,
+      "reason": "Smoke suite has shown intermittent instability recently."
+    },
+    {
+      "pattern": "scripts/harness-ui-pre-pr.sh",
+      "weight": 8,
+      "reason": "UI harness pre-PR checks had multiple flaky reruns."
+    }
+  ],
+  "incidentTaggedFiles": [
+    {
+      "pattern": "app/api/legal-chat/**",
+      "weight": 20,
+      "reason": "Files in this area are tagged by prior customer-facing incident reviews."
+    },
+    {
+      "pattern": "db/schema.ts",
+      "weight": 15,
+      "reason": "Schema changes were involved in recent incident retrospectives."
+    }
+  ],
+  "priorRollbackAreas": [
+    {
+      "pattern": ".github/workflows/**",
+      "weight": 12,
+      "reason": "Workflow modifications have required rollback in prior releases."
+    },
+    {
+      "pattern": "lib/tools/**",
+      "weight": 10,
+      "reason": "Tooling updates in this path have caused prior rollback events."
+    }
+  ]
+}
