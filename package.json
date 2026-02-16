@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Agent-first monorepo scaffold",
   "scripts": {
-    "lint": "echo 'lint placeholder'",
+    "lint": "npm run lint:eslint && npm run lint:custom",
     "test": "bash scripts/verify-structure.sh",
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r build",
@@ -16,6 +16,15 @@
     "harness:ui:capture-browser-evidence": "echo 'browser evidence capture placeholder'",
     "harness:ui:verify-browser-evidence": "echo 'browser evidence verify placeholder'",
     "harness:risk-tier": "bash scripts/harness-risk-tier.sh",
-    "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh"
+    "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh",
+    "lint:eslint": "eslint .",
+    "lint:custom": "node scripts/run-custom-lints.mjs",
+    "test:lint-rules": "node --test scripts/custom-lint-rules.test.mjs"
+  },
+  "devDependencies": {
+    "eslint": "^9.34.0",
+    "@eslint/js": "^9.34.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "globals": "^15.9.0"
   }
 }
