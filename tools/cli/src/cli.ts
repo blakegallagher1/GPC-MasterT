@@ -47,6 +47,17 @@ export interface EvalReport {
   taskResults: EvalTaskResult[];
 }
 
+function emit(level: "info" | "error", event: string, message: string, context?: Record<string, unknown>): void {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    level,
+    event,
+    message,
+    ...(context ? { context } : {}),
+  };
+  process.stdout.write(`${JSON.stringify(payload)}\n`);
+}
+
 /** Discover skills by scanning the skills/ directory for SKILL.md files. */
 export function discoverSkills(repoRoot: string): { name: string; description: string }[] {
   const skillsDir = join(repoRoot, "skills");
@@ -182,46 +193,42 @@ export function run(argv: string[], repoRoot: string): number {
     case "validate": {
       const result = validateStructure(repoRoot);
       if (result.valid) {
-        console.log("✅ Repository structure is valid.");
+        emit("info", "cli.validate.success", "Repository structure is valid.");
         return 0;
       }
 
-      console.error("❌ Missing required paths:");
-      for (const p of result.missing) {
-        console.error(`   - ${p}`);
-      }
+      emit("error", "cli.validate.failure", "Missing required paths.", {
+        missingPaths: result.missing,
+      });
       return 1;
     }
 
     case "skills": {
       const skills = discoverSkills(repoRoot);
       if (skills.length === 0) {
-        console.log("No skills found.");
+        emit("info", "cli.skills.none", "No skills found.");
       } else {
-        console.log("Available skills:");
-        for (const s of skills) {
-          console.log(`  • ${s.name} — ${s.description}`);
-        }
+        emit("info", "cli.skills.list", "Available skills discovered.", { skills });
       }
       return 0;
     }
 
     case "eval:run": {
       const report = executeEvalRun(repoRoot, args);
-      console.log(JSON.stringify(report, null, 2));
+      emit("info", "cli.eval.complete", "Eval suite completed.", { report });
       return 0;
     }
 
     case "help":
     default:
-      console.log(`gpc — GPC Monorepo CLI
-
-Usage:
-  gpc validate      Validate repository structure
-  gpc skills        List available agent skills
-  gpc eval run      Execute evaluation suite and emit JSON report
-  gpc help          Show this help message
-`);
+      emit("info", "cli.help", "CLI usage output.", {
+        usage: [
+          "gpc validate    Validate repository structure",
+          "gpc skills      List available agent skills",
+          "gpc eval run    Execute evaluation suite and emit JSON report",
+          "gpc help        Show this help message",
+        ],
+      });
       return 0;
   }
 }

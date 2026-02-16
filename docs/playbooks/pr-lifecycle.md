@@ -19,10 +19,30 @@
 6. If actionable findings exist, remediate in-branch and rerun deterministically.
 7. Merge after all required checks pass and rollout steps are documented.
 
+## Linting policy
+
+`npm run lint` is a required gate that now runs both ESLint and repository custom lints.
+
+- **ESLint**: baseline syntax and correctness linting across TypeScript/JavaScript.
+- **Custom lints**:
+  - Domain/layer dependency direction (`apps -> packages`, `tools -> {tools, packages}`, `packages -> packages`).
+  - Structured logging in source modules (no direct `console.*` calls in `*/src/**`).
+  - Kebab-case file naming with optional `.test` suffix.
+  - Source file size budget (max 250 lines per `*/src/**` module).
+
+All custom lint findings include an `Agent remediation:` instruction so automated contributors
+can apply deterministic, low-friction fixes.
+
 ## CI security
 
 The `ci.yml` workflow uses `permissions: contents: read` (least-privilege) to
 limit the `GITHUB_TOKEN` scope for all jobs.
+
+## Observability impact notes
+
+Lint policy now treats structured logging as a release gate. This keeps runtime and CLI logs
+machine-parseable for dashboarding and runbook analysis, reducing investigation latency during
+incident response.
 
 ## Harness gap loop
 

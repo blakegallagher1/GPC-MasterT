@@ -32,6 +32,10 @@ jobs:
         run: pnpm install
       - name: Verify structure
         run: npm test
+      - name: Lint
+        run: npm run lint
+      - name: Test custom lint rules
+        run: npm run test:lint-rules
       - name: Compute adaptive risk score
         run: |
           FILES=$(git diff --name-only HEAD~1...HEAD | tr '\n' ' ')

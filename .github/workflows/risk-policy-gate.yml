@@ -107,5 +107,6 @@ jobs:
           echo "Required checks: ${{ needs.preflight.outputs.required-checks }}"
           echo "Risk score: ${{ needs.preflight.outputs.risk-score }}"
           npm run lint
+          npm run test:lint-rules
           npm test
           npm run build

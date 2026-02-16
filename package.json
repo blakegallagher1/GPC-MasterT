@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Agent-first monorepo scaffold",
   "scripts": {
-    "lint": "echo 'lint placeholder'",
+    "lint": "npm run lint:eslint && npm run lint:custom",
     "test": "bash scripts/verify-structure.sh",
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r build",
@@ -20,6 +20,15 @@
     "docs:integrity": "pnpm dlx tsx scripts/check-docs-integrity.ts --max-age-days 90",
     "eval:run": "pnpm --filter @gpc/cli build && node tools/cli/dist/index.js eval run --suite tests/evals/suites/core.json --out tests/evals/reports/latest.json",
     "eval:gate": "node scripts/eval-release-gate.mjs --report tests/evals/reports/latest.json --baseline docs/analysis/eval-baseline.json --thresholds tests/evals/release-gate.thresholds.json",
-    "eval:trends": "node scripts/publish-eval-trends.mjs --report tests/evals/reports/latest.json --baseline docs/analysis/eval-baseline.json --out docs/analysis/eval-trends.md"
+    "eval:trends": "node scripts/publish-eval-trends.mjs --report tests/evals/reports/latest.json --baseline docs/analysis/eval-baseline.json --out docs/analysis/eval-trends.md",
+    "lint:eslint": "eslint .",
+    "lint:custom": "node scripts/run-custom-lints.mjs",
+    "test:lint-rules": "node --test scripts/custom-lint-rules.test.mjs"
+  },
+  "devDependencies": {
+    "eslint": "^9.34.0",
+    "@eslint/js": "^9.34.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "globals": "^15.9.0"
   }
 }
