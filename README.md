@@ -47,4 +47,4 @@ Zero-dependency Node.js HTTP server exposing:
 - `docs/`: architecture, operating model, and playbooks.
 - `.github/`: CI, automation, and contribution workflows.
 
-See `docs/analysis/harness-agent-first-summary.md` for the source analysis and `docs/architecture/repo-structure.md` for structure rationale.
+See `docs/analysis/harness-agent-first-summary.md` for the source analysis, `docs/analysis/harness-engineering-coverage-assessment.md` for a repository coverage audit against the Harness article, and `docs/architecture/repo-structure.md` for structure rationale.
