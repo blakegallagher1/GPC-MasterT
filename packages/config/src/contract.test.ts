@@ -43,10 +43,22 @@ const VALID_CONTRACT: RiskPolicyContract = {
     maxAgeDays: 7,
   },
   reviewAgent: {
-    name: "Greptile",
-    rerunWorkflow: "greptile-rerun.yml",
-    autoResolveWorkflow: "greptile-auto-resolve-threads.yml",
+    name: "Reviewer Mesh",
     timeoutMinutes: 20,
+    providers: [
+      {
+        id: "style",
+        name: "Style Reviewer",
+        rerunWorkflow: "style-reviewer-rerun.yml",
+        autoResolveWorkflow: "style-reviewer-auto-resolve-threads.yml",
+      },
+      {
+        id: "security",
+        name: "Security Reviewer",
+        rerunWorkflow: "security-reviewer-rerun.yml",
+        autoResolveWorkflow: "security-reviewer-auto-resolve-threads.yml",
+      },
+    ],
   },
   remediationAgent: {
     name: "Codex Action",
@@ -89,6 +101,17 @@ describe("validateContract", () => {
       mergePolicy: { high: {}, low: { requiredChecks: [] } },
     };
     assert.throws(() => validateContract(bad), /requiredChecks/);
+  });
+
+  it("rejects reviewAgent without providers", () => {
+    const bad = {
+      ...VALID_CONTRACT,
+      reviewAgent: {
+        ...VALID_CONTRACT.reviewAgent,
+        providers: [],
+      },
+    };
+    assert.throws(() => validateContract(bad), /providers must be a non-empty array/);
   });
 });
 

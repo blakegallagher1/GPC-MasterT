@@ -11,8 +11,10 @@
    - For UI/flow changes: require browser evidence (`npm run harness:ui:pre-pr`).
 5. Request agent review loop and resolve feedback.
    - Review state must match the current PR head commit SHA.
-   - Stale review summaries tied to older SHAs are ignored.
-   - A single canonical workflow posts rerun requests (SHA-deduped).
+   - Stale review summaries tied to older SHAs are ignored per reviewer provider.
+   - Reviewer outputs (style/security/architecture) are normalized into a shared finding schema.
+   - Duplicate findings are adjudicated by severity + confidence before remediation.
+   - Provider-specific rerun workflows are triggered with SHA-deduped comments.
    - Bot-only threads auto-resolve after clean current-head rerun.
 6. If actionable findings exist, remediate in-branch and rerun deterministically.
 7. Merge after all required checks pass and rollout steps are documented.
@@ -35,3 +37,6 @@ Convert incidents into harness test cases to grow long-term coverage.
 
 - CI now logs `risk-score` and serialized risk explanation output so reviewers can trace why a PR was classified as `high` or `low`.
 - Keep `risk-signals.metadata.json` current with flaky/incident/rollback tags to preserve signal quality over time.
+- Track `review_findings_total` by `provider`, `severity`, and `category` to identify noisy reviewer channels.
+- Track `review_findings_adjudicated_total` and `review_findings_deduplicated_total` to validate conflict-resolution quality.
+- Track `review_rerun_requests_total` by provider workflow to detect stuck rerun pipelines.

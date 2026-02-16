@@ -53,10 +53,28 @@
     "maxAgeDays": 7
   },
   "reviewAgent": {
-    "name": "Greptile",
-    "rerunWorkflow": "greptile-rerun.yml",
-    "autoResolveWorkflow": "greptile-auto-resolve-threads.yml",
-    "timeoutMinutes": 20
+    "name": "Reviewer Mesh",
+    "timeoutMinutes": 20,
+    "providers": [
+      {
+        "id": "style",
+        "name": "Style Reviewer",
+        "rerunWorkflow": "style-reviewer-rerun.yml",
+        "autoResolveWorkflow": "style-reviewer-auto-resolve-threads.yml"
+      },
+      {
+        "id": "security",
+        "name": "Security Reviewer",
+        "rerunWorkflow": "security-reviewer-rerun.yml",
+        "autoResolveWorkflow": "security-reviewer-auto-resolve-threads.yml"
+      },
+      {
+        "id": "architecture",
+        "name": "Architecture Reviewer",
+        "rerunWorkflow": "architecture-reviewer-rerun.yml",
+        "autoResolveWorkflow": "architecture-reviewer-auto-resolve-threads.yml"
+      }
+    ]
   },
   "remediationAgent": {
     "name": "Codex Action",
