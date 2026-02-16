@@ -72,6 +72,11 @@ export function validateBrowserEvidence(
   const now = Date.now();
   for (const entry of manifest.entries) {
     const entryTime = new Date(entry.timestamp).getTime();
+    if (Number.isNaN(entryTime)) {
+      throw new Error(
+        `Browser evidence for "${entry.flowName}" has invalid timestamp: ${entry.timestamp}`,
+      );
+    }
     if (now - entryTime > maxAgeMs) {
       throw new Error(
         `Browser evidence for "${entry.flowName}" is older than ${config.maxAgeDays} days`,

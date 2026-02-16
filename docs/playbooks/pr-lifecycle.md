@@ -8,6 +8,7 @@
    - Verify docs-drift rules (control-plane changes require doc updates).
    - For high-tier changes: require code-review-agent clean state at current head SHA.
    - For UI/flow changes: require browser evidence (`npm run harness:ui:pre-pr`).
+  - Browser evidence is stored at `artifacts/browser-evidence/<headSha>/manifest.json` with per-flow screenshots and traces.
 5. Request agent review loop and resolve feedback.
    - Review state must match the current PR head commit SHA.
    - Stale review summaries tied to older SHAs are ignored.
@@ -29,3 +30,9 @@ production regression → harness-gap issue → case added → SLA tracked
 ```
 
 Convert incidents into harness test cases to grow long-term coverage.
+
+
+## Browser evidence observability
+
+- Keep generated manifests in PR artifacts for auditability and SHA-level traceability.
+- High-risk PRs now fail `risk-policy-gate` when required browser evidence is missing or stale.

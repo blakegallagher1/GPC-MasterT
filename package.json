@@ -13,9 +13,12 @@
     "smoke": "bash tests/smoke/run.sh",
     "harness:legal-chat:smoke": "bash scripts/harness-legal-chat-smoke.sh",
     "harness:ui:pre-pr": "bash scripts/harness-ui-pre-pr.sh",
-    "harness:ui:capture-browser-evidence": "echo 'browser evidence capture placeholder'",
-    "harness:ui:verify-browser-evidence": "echo 'browser evidence verify placeholder'",
+    "harness:ui:capture-browser-evidence": "node scripts/harness-ui-capture.mjs",
+    "harness:ui:verify-browser-evidence": "node scripts/harness-ui-verify.mjs",
     "harness:risk-tier": "bash scripts/harness-risk-tier.sh",
     "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.0"
   }
 }

@@ -373,4 +373,38 @@ describe("validateBrowserEvidence", () => {
       /older than/,
     );
   });
+
+  it("fails when required field is empty", () => {
+    const badField: BrowserEvidenceManifest = {
+      headSha: "abc",
+      entries: [
+        {
+          ...validManifest.entries[0],
+          accountIdentity: "",
+        },
+      ],
+    };
+
+    assert.throws(
+      () => validateBrowserEvidence(badField, VALID_CONTRACT, "abc"),
+      /missing required field: accountIdentity/,
+    );
+  });
+
+  it("fails for invalid timestamp", () => {
+    const badTimestamp: BrowserEvidenceManifest = {
+      headSha: "abc",
+      entries: [
+        {
+          ...validManifest.entries[0],
+          timestamp: "not-an-iso-date",
+        },
+      ],
+    };
+
+    assert.throws(
+      () => validateBrowserEvidence(badTimestamp, VALID_CONTRACT, "abc"),
+      /invalid timestamp/,
+    );
+  });
 });
