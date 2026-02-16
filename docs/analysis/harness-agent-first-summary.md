@@ -18,3 +18,5 @@
 - Built-in guidance (`AGENTS.md`, playbooks, runbooks) for deterministic agent behavior.
 - First-class observability and testing directories to make validation explicit.
 - Environment-aware infra layout (dev/staging/prod) for repeatable launches.
+
+Back to [Documentation Index](../README.md).

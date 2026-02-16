@@ -6,7 +6,7 @@
 4. **Risk-tier gate** (`npm run harness:risk-tier`):
    - Compute adaptive risk score/tier from changed files using contract, semantic signals, and `risk-signals.metadata.json` historical inputs.
    - Emit risk explanation payload (triggered signals + score breakdown) for CI auditability.
-   - Verify docs-drift rules (control-plane changes require doc updates).
+   - Verify docs-drift rules (control-plane and path-class coverage require aligned doc updates across architecture, operating model, playbooks, and runbooks).
    - For high-tier changes: require code-review-agent clean state at current head SHA.
    - For UI/flow changes: require browser evidence (`npm run harness:ui:pre-pr`).
 5. Request agent review loop and resolve feedback.
@@ -40,3 +40,9 @@ Convert incidents into harness test cases to grow long-term coverage.
 - Track `review_findings_total` by `provider`, `severity`, and `category` to identify noisy reviewer channels.
 - Track `review_findings_adjudicated_total` and `review_findings_deduplicated_total` to validate conflict-resolution quality.
 - Track `review_rerun_requests_total` by provider workflow to detect stuck rerun pipelines.
+
+## Docs integrity checker
+
+Run `pnpm dlx tsx scripts/check-docs-integrity.ts --max-age-days 90` before opening PRs that touch control-plane, runtime, or ops docs.
+
+Back to [Documentation Index](../README.md).

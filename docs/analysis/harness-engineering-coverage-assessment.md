@@ -31,3 +31,5 @@ If the question is "are we directionally aligned with this operating model?", th
 
 ## Observability impact
 This assessment is documentation-only and introduces **no runtime observability changes**.
+
+Back to [Documentation Index](../README.md).
