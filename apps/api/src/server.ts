@@ -1,4 +1,6 @@
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
+import { SpanStatusCode } from "@opentelemetry/api";
+import { apiTelemetry, logApi } from "./observability.js";
 
 export interface Route {
   method: string;
@@ -49,18 +51,59 @@ export function routesHandler(routes: Route[]) {
 /** Create the HTTP server with the given routes. */
 export function createApp(routes: Route[]) {
   const server = createServer(async (req, res) => {
+    const start = process.hrtime.bigint();
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
-    const route = routes.find((r) => r.method === req.method && r.path === url.pathname);
 
-    if (route) {
-      try {
-        await route.handler(req, res);
-      } catch (err) {
-        json(res, 500, { error: "Internal Server Error" });
-      }
-    } else {
-      json(res, 404, { error: "Not Found" });
-    }
+    await apiTelemetry.tracer.startActiveSpan(
+      "http.request",
+      {
+        attributes: {
+          "http.method": req.method ?? "GET",
+          "http.route": url.pathname,
+        },
+      },
+      async (span) => {
+        const route = routes.find((r) => r.method === req.method && r.path === url.pathname);
+
+        try {
+          apiTelemetry.requestCount.add(1, { method: req.method ?? "UNKNOWN", path: url.pathname });
+          if (route) {
+            await route.handler(req, res);
+            span.setStatus({ code: SpanStatusCode.OK });
+          } else {
+            json(res, 404, { error: "Not Found" });
+            apiTelemetry.requestErrors.add(1, { method: req.method ?? "UNKNOWN", path: url.pathname, status: "404" });
+            span.setStatus({ code: SpanStatusCode.ERROR, message: "route_not_found" });
+          }
+        } catch (err) {
+          span.recordException(err instanceof Error ? err : new Error(String(err)));
+          span.setStatus({ code: SpanStatusCode.ERROR, message: "handler_error" });
+          apiTelemetry.requestErrors.add(1, { method: req.method ?? "UNKNOWN", path: url.pathname, status: "500" });
+          logApi("error", "request handler failure", {
+            method: req.method,
+            path: url.pathname,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          json(res, 500, { error: "Internal Server Error" });
+        } finally {
+          const statusCode = String(res.statusCode || 0);
+          const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+          apiTelemetry.requestLatencyMs.record(durationMs, {
+            method: req.method ?? "UNKNOWN",
+            path: url.pathname,
+            status: statusCode,
+          });
+          logApi("info", "request completed", {
+            method: req.method,
+            path: url.pathname,
+            statusCode: res.statusCode,
+            durationMs,
+          });
+          span.setAttribute("http.status_code", res.statusCode || 0);
+          span.end();
+        }
+      },
+    );
   });
 
   return server;
@@ -68,9 +111,7 @@ export function createApp(routes: Route[]) {
 
 /** Default routes for the API. */
 export function defaultRoutes(): Route[] {
-  const routes: Route[] = [
-    { method: "GET", path: "/health", handler: healthHandler },
-  ];
+  const routes: Route[] = [{ method: "GET", path: "/health", handler: healthHandler }];
   // Self-referential: list routes
   routes.push({ method: "GET", path: "/routes", handler: routesHandler(routes) });
   return routes;

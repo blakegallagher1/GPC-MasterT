@@ -56,3 +56,5 @@ export type { MemoryRecord, MemoryQuery, MemoryKind } from "./memory-store.js";
 
 export { RetryPolicy } from "./retry-policy.js";
 export type { FailureClass, RetryPolicyOptions, RetryAttemptState } from "./retry-policy.js";
+
+export { emitStructuredLog, initOpenTelemetry, runtimeTelemetry, shutdownOpenTelemetry } from "./observability.js";

@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+<<<<<<< HEAD
 import {
   parseArgs,
   validateStructure,
@@ -9,6 +10,10 @@ import {
   type EvalSuite,
 } from "./cli.js";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+=======
+import { parseArgs, validateStructure, discoverSkills, parseObsArgs } from "./cli.js";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+>>>>>>> origin/pr17
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -70,6 +75,7 @@ describe("discoverSkills", () => {
   });
 });
 
+<<<<<<< HEAD
 describe("eval runner", () => {
   it("computes required metrics from benchmark tasks", () => {
     const suite: EvalSuite = {
@@ -129,5 +135,16 @@ describe("eval runner", () => {
     } finally {
       rmSync(tmp, { recursive: true });
     }
+=======
+describe("parseObsArgs", () => {
+  it("parses obs query options", () => {
+    const result = parseObsArgs(["query", "--type=metrics", "--query=up"]);
+    assert.equal(result.type, "metrics");
+    assert.equal(result.query, "up");
+  });
+
+  it("throws on unknown type", () => {
+    assert.throws(() => parseObsArgs(["query", "--type=unknown"]));
+>>>>>>> origin/pr17
   });
 });

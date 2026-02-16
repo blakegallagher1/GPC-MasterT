@@ -4,6 +4,8 @@ import { dirname } from "node:path";
 import type { ExecutionPlan, GoalPlanner } from "./planner.js";
 import { RetryPolicy, type RetryAttemptState } from "./retry-policy.js";
 import type { ExecutionMemoryStore, MemoryKind } from "./memory-store.js";
+import { trace } from "@opentelemetry/api";
+import { emitStructuredLog, markSpanError, markSpanOk, runtimeTelemetry } from "./observability.js";
 
 /** Possible statuses a task can be in. */
 export type TaskStatus = "queued" | "running" | "done" | "failed";
@@ -64,6 +66,8 @@ export interface TaskRunnerOptions {
   repoId?: string;
   pathScope?: string;
 }
+
+const runtimeTracer = trace.getTracer("gpc.agent-runtime", "0.1.0");
 
 /**
  * Registry of available task definitions and their run history.
@@ -148,14 +152,13 @@ export class TaskRunner {
   }
 
   private async executeRun(run: TaskRun, def: TaskDefinition, input: unknown): Promise<void> {
+    const start = process.hrtime.bigint();
     run.status = "running";
     run.startedAt ??= new Date().toISOString();
     run.updatedAt = new Date().toISOString();
     await this.persistState();
 
-    const log = (message: string, level: TaskLogEntry["level"] = "info") => {
-      run.logs.push({ timestamp: new Date().toISOString(), level, message });
-    };
+    runtimeTelemetry.taskRunsTotal.add(1, { task_name: run.taskName });
 
     const logRetryState = (state: RetryAttemptState) => {
       if (state.failureClass) {
@@ -188,6 +191,7 @@ export class TaskRunner {
     } catch (err) {
       run.error = err instanceof Error ? err.message : String(err);
       run.status = "failed";
+      runtimeTelemetry.taskErrorsTotal.add(1, { task_name: run.taskName });
       await this.writeMemory("failed-attempt", `Task ${run.taskName} failed: ${run.error}`, run, {
         attempts: run.attempts,
       });
