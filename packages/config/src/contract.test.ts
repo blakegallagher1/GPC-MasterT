@@ -36,6 +36,14 @@ const VALID_CONTRACT: RiskPolicyContract = {
   docsDriftRules: {
     controlPlanePaths: ["risk-policy.contract.json", ".github/workflows/**"],
     requiredDocPaths: ["docs/playbooks/**", "docs/operating-model/**"],
+    coverageByPathClass: [
+      {
+        id: "workflow-updates",
+        triggerPaths: [".github/workflows/**"],
+        requiredDocPaths: ["docs/playbooks/**", "observability/runbooks/**"],
+        reason: "Workflow changes must update operating procedures.",
+      },
+    ],
   },
   browserEvidence: {
     requiredFlows: ["legal-chat-login"],
@@ -317,6 +325,26 @@ describe("assertDocsDriftRules", () => {
       /documentation was updated/,
     );
   });
+  it("fails when path-class docs coverage is missing", () => {
+    assert.throws(
+      () =>
+        assertDocsDriftRules(
+          [".github/workflows/ci.yml", "docs/operating-model/agent-operating-model.md"],
+          VALID_CONTRACT,
+        ),
+      /workflow-updates/,
+    );
+  });
+
+  it("passes when path-class docs coverage is present", () => {
+    assert.doesNotThrow(() =>
+      assertDocsDriftRules(
+        [".github/workflows/ci.yml", "docs/playbooks/pr-lifecycle.md"],
+        VALID_CONTRACT,
+      ),
+    );
+  });
+
 });
 
 /* ------------------------------------------------------------------ */

@@ -9,3 +9,5 @@
 - Implement code, tests, docs, and automation.
 - Run checks and iterate on feedback.
 - Produce PR artifacts with verification evidence.
+
+Back to [Documentation Index](../README.md).

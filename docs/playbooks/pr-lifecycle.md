@@ -5,7 +5,7 @@
 3. Run local checks (`lint`, `test`, `build`).
 4. **Risk-tier gate** (`npm run harness:risk-tier`):
    - Compute risk tier from changed files against `risk-policy.contract.json`.
-   - Verify docs-drift rules (control-plane changes require doc updates).
+   - Verify docs-drift rules (control-plane and path-class coverage require aligned doc updates across architecture, operating model, playbooks, and runbooks).
    - For high-tier changes: require code-review-agent clean state at current head SHA.
    - For UI/flow changes: require browser evidence (`npm run harness:ui:pre-pr`).
 5. Request agent review loop and resolve feedback.
@@ -29,3 +29,10 @@ production regression → harness-gap issue → case added → SLA tracked
 ```
 
 Convert incidents into harness test cases to grow long-term coverage.
+
+Back to [Documentation Index](../README.md).
+
+
+## Docs integrity checker
+
+Run `pnpm dlx tsx scripts/check-docs-integrity.ts --max-age-days 90` before opening PRs that touch control-plane, runtime, or ops docs.

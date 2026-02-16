@@ -16,6 +16,7 @@
     "harness:ui:capture-browser-evidence": "echo 'browser evidence capture placeholder'",
     "harness:ui:verify-browser-evidence": "echo 'browser evidence verify placeholder'",
     "harness:risk-tier": "bash scripts/harness-risk-tier.sh",
-    "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh"
+    "harness:weekly-metrics": "bash scripts/harness-weekly-metrics.sh",
+    "docs:integrity": "pnpm dlx tsx scripts/check-docs-integrity.ts --max-age-days 90"
   }
 }
