@@ -1,0 +1,18 @@
+{
+  "name": "@gpc/cli",
+  "version": "0.1.0",
+  "description": "GPC monorepo CLI — validate structure, list skills, run tasks",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "gpc": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/cli.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "typescript": "^5.7.0"
+  }
+}

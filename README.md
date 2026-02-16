@@ -8,6 +8,34 @@ Agent-first engineering monorepo scaffold inspired by the Harness experiment: hu
 - Make product state legible to agents (code, tests, UI signals, logs, metrics).
 - Keep every change production-ready, reversible, and observable.
 
+## Quick start
+
+```bash
+pnpm install       # install workspace dependencies
+pnpm -r build      # build every package
+pnpm -r test       # run per-package unit tests
+npm test           # validate repository structure
+```
+
+## Features
+
+### `packages/config` — Shared configuration
+Environment-aware config loader with typed schema and validation. Supports `development`, `staging`, and `production` environments with overrides via environment variables (`PORT`, `LOG_LEVEL`, `API_BASE_URL`).
+
+### `packages/agent-runtime` — Task execution runtime
+Register named task definitions with typed input/output, submit them for asynchronous execution, and track their lifecycle (`queued` → `running` → `done`/`failed`) with structured log capture.
+
+### `tools/cli` — Monorepo CLI (`gpc`)
+Command-line interface for the monorepo:
+- `gpc validate` — verify required repository structure
+- `gpc skills` — discover available agent skills from `skills/*/SKILL.md`
+- `gpc help` — show usage
+
+### `apps/api` — HTTP API server
+Zero-dependency Node.js HTTP server exposing:
+- `GET /health` — health check with timestamp
+- `GET /routes` — self-documenting route listing
+
 ## Repository map
 - `apps/`: user-facing product surfaces.
 - `packages/`: shared runtime libraries and conventions.

@@ -6,6 +6,8 @@
   "scripts": {
     "lint": "echo 'lint placeholder'",
     "test": "bash scripts/verify-structure.sh",
-    "build": "echo 'build placeholder'"
+    "build": "pnpm -r build",
+    "test:all": "pnpm -r build && pnpm -r test",
+    "smoke": "bash tests/smoke/run.sh"
   }
 }
