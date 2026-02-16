@@ -42,8 +42,7 @@ jobs:
         id: gate
         run: |
           node --input-type=module <<'EOF'
-          import { loadContract, computeRiskTier, computeRequiredChecks, needsCodeReviewAgent } from '@gpc/config';
-          import { assertDocsDriftRules } from '@gpc/config';
+          import { loadContract, computeRiskTier, computeRequiredChecks, needsCodeReviewAgent, assertDocsDriftRules } from './packages/config/dist/index.js';
 
           const files = process.env.CHANGED_FILES.split(',').filter(Boolean);
           const contract = await loadContract(process.cwd());
