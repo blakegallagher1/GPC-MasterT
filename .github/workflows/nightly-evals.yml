@@ -1,0 +1,38 @@
+name: nightly-evals
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eval-trends:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build workspaces
+        run: pnpm -r build
+      - name: Execute eval suite
+        run: npm run eval:run
+      - name: Enforce eval gate
+        run: npm run eval:gate
+      - name: Publish trend artifacts to docs/analysis
+        run: npm run eval:trends
+      - name: Upload eval trend artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-eval-trends
+          path: |
+            docs/analysis/eval-latest.json
+            docs/analysis/eval-trends.md
+            tests/evals/reports/latest.json

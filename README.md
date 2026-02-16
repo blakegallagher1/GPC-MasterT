@@ -29,6 +29,7 @@ Register named task definitions with typed input/output, submit them for asynchr
 Command-line interface for the monorepo:
 - `gpc validate` — verify required repository structure
 - `gpc skills` — discover available agent skills from `skills/*/SKILL.md`
+- `gpc eval run` — execute benchmark eval suites and emit JSON reports
 - `gpc help` — show usage
 
 ### `apps/api` — HTTP API server
@@ -48,3 +49,11 @@ Zero-dependency Node.js HTTP server exposing:
 - `.github/`: CI, automation, and contribution workflows.
 
 See `docs/analysis/harness-agent-first-summary.md` for the source analysis, `docs/analysis/harness-engineering-coverage-assessment.md` for a repository coverage audit against the Harness article, and `docs/architecture/repo-structure.md` for structure rationale.
+
+
+## Eval program
+
+- Benchmark tasks live in `tests/evals/suites/core.json` and cover bug-fix, refactor, policy-compliance, and docs-update scenarios.
+- Metric definitions and release thresholds are documented in `tests/evals/README.md` and `tests/evals/release-gate.thresholds.json`.
+- Run `npm run eval:run` to generate `tests/evals/reports/latest.json`, then enforce quality gates with `npm run eval:gate`.
+- Nightly trend publishing updates `docs/analysis/eval-latest.json` and `docs/analysis/eval-trends.md`.

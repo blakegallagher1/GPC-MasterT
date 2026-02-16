@@ -52,3 +52,5 @@ This structure mirrors an agent-first product engineering setup where agents can
 - **`infra/`**: enables per-environment provisioning and deployment.
 - **`tests/`**: supports gatekeeping at multiple fidelity levels.
 - **`docs/operating-model` + `docs/playbooks`**: captures human steering policy.
+
+Back to [Documentation Index](../README.md).

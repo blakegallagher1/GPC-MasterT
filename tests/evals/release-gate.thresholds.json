@@ -1,0 +1,14 @@
+{
+  "minimumPassRate": 0.95,
+  "maximumRetriesToSuccess": 1.2,
+  "maximumPolicyViolations": 3,
+  "maximumMeanTaskDurationMs": 650,
+  "minimumRegressionDelta": -0.02,
+  "maxAllowedDrops": {
+    "passRate": 0.05,
+    "retriesToSuccess": 0.4,
+    "policyViolations": 1,
+    "meanTaskDurationMs": 120,
+    "regressionDelta": 0.03
+  }
+}

@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import { strict as assert } from "node:assert";
 import { validateContract } from "./contract.js";
-import { computeRiskTier, computeRequiredChecks, needsCodeReviewAgent, globToRegExp, matchesAny } from "./risk-tier.js";
+import { computeRiskAssessment, computeRiskTier, computeRequiredChecks, needsCodeReviewAgent, globToRegExp, matchesAny } from "./risk-tier.js";
 import { assertDocsDriftRules } from "./docs-drift.js";
 import { assertCheckForCurrentHead, assertRequiredChecksSuccessful, assertReviewCleanForHead } from "./sha-discipline.js";
 import { buildRerunComment, hasExistingRerunRequest, maybeRerunComment } from "./rerun-writer.js";
@@ -36,6 +36,14 @@ const VALID_CONTRACT: RiskPolicyContract = {
   docsDriftRules: {
     controlPlanePaths: ["risk-policy.contract.json", ".github/workflows/**"],
     requiredDocPaths: ["docs/playbooks/**", "docs/operating-model/**"],
+    coverageByPathClass: [
+      {
+        id: "workflow-updates",
+        triggerPaths: [".github/workflows/**"],
+        requiredDocPaths: ["docs/playbooks/**", "observability/runbooks/**"],
+        reason: "Workflow changes must update operating procedures.",
+      },
+    ],
   },
   browserEvidence: {
     requiredFlows: ["legal-chat-login"],
@@ -43,10 +51,22 @@ const VALID_CONTRACT: RiskPolicyContract = {
     maxAgeDays: 7,
   },
   reviewAgent: {
-    name: "Greptile",
-    rerunWorkflow: "greptile-rerun.yml",
-    autoResolveWorkflow: "greptile-auto-resolve-threads.yml",
+    name: "Reviewer Mesh",
     timeoutMinutes: 20,
+    providers: [
+      {
+        id: "style",
+        name: "Style Reviewer",
+        rerunWorkflow: "style-reviewer-rerun.yml",
+        autoResolveWorkflow: "style-reviewer-auto-resolve-threads.yml",
+      },
+      {
+        id: "security",
+        name: "Security Reviewer",
+        rerunWorkflow: "security-reviewer-rerun.yml",
+        autoResolveWorkflow: "security-reviewer-auto-resolve-threads.yml",
+      },
+    ],
   },
   remediationAgent: {
     name: "Codex Action",
@@ -89,6 +109,17 @@ describe("validateContract", () => {
       mergePolicy: { high: {}, low: { requiredChecks: [] } },
     };
     assert.throws(() => validateContract(bad), /requiredChecks/);
+  });
+
+  it("rejects reviewAgent without providers", () => {
+    const bad = {
+      ...VALID_CONTRACT,
+      reviewAgent: {
+        ...VALID_CONTRACT.reviewAgent,
+        providers: [],
+      },
+    };
+    assert.throws(() => validateContract(bad), /providers must be a non-empty array/);
   });
 });
 
@@ -148,6 +179,65 @@ describe("computeRiskTier", () => {
       computeRiskTier(["README.md", "lib/tools/parser.ts"], VALID_CONTRACT),
       "high",
     );
+  });
+});
+
+
+
+describe("computeRiskAssessment", () => {
+  const metadata = {
+    version: "1",
+    recentFlakyTests: [
+      {
+        pattern: "tests/smoke/**",
+        weight: 10,
+        reason: "smoke flake",
+      },
+    ],
+    incidentTaggedFiles: [
+      {
+        pattern: "app/api/legal-chat/**",
+        weight: 20,
+        reason: "incident area",
+      },
+    ],
+    priorRollbackAreas: [
+      {
+        pattern: ".github/workflows/**",
+        weight: 12,
+        reason: "prior rollback",
+      },
+    ],
+  };
+
+  it("scores deterministically and returns high tier when threshold is met", () => {
+    const changed = [
+      "tests/smoke/run.sh",
+      "app/api/legal-chat/route.ts",
+      ".github/workflows/ci.yml",
+    ];
+
+    const first = computeRiskAssessment(changed, VALID_CONTRACT, metadata);
+    const second = computeRiskAssessment([...changed].reverse(), VALID_CONTRACT, metadata);
+
+    assert.equal(first.score, 147);
+    assert.equal(first.tier, "high");
+    assert.deepEqual(first, second);
+  });
+
+  it("returns transparent explanation with triggered categories", () => {
+    const result = computeRiskAssessment(
+      ["app/api/legal-chat/route.ts", "tests/smoke/run.sh"],
+      VALID_CONTRACT,
+      metadata,
+    );
+
+    const categories = result.explanation.triggeredSignals.map((s) => s.category);
+    assert.ok(categories.includes("contract-rule"));
+    assert.ok(categories.includes("semantic-public-api"));
+    assert.ok(categories.includes("history-incidents"));
+    assert.ok(categories.includes("history-flaky-tests"));
+    assert.ok(result.explanation.scoreBreakdown.every((entry) => entry.includes("(+")));
   });
 });
 
@@ -317,6 +407,26 @@ describe("assertDocsDriftRules", () => {
       /documentation was updated/,
     );
   });
+  it("fails when path-class docs coverage is missing", () => {
+    assert.throws(
+      () =>
+        assertDocsDriftRules(
+          [".github/workflows/ci.yml", "docs/operating-model/agent-operating-model.md"],
+          VALID_CONTRACT,
+        ),
+      /workflow-updates/,
+    );
+  });
+
+  it("passes when path-class docs coverage is present", () => {
+    assert.doesNotThrow(() =>
+      assertDocsDriftRules(
+        [".github/workflows/ci.yml", "docs/playbooks/pr-lifecycle.md"],
+        VALID_CONTRACT,
+      ),
+    );
+  });
+
 });
 
 /* ------------------------------------------------------------------ */
@@ -371,6 +481,40 @@ describe("validateBrowserEvidence", () => {
     assert.throws(
       () => validateBrowserEvidence(stale, VALID_CONTRACT, "abc"),
       /older than/,
+    );
+  });
+
+  it("fails when required field is empty", () => {
+    const badField: BrowserEvidenceManifest = {
+      headSha: "abc",
+      entries: [
+        {
+          ...validManifest.entries[0],
+          accountIdentity: "",
+        },
+      ],
+    };
+
+    assert.throws(
+      () => validateBrowserEvidence(badField, VALID_CONTRACT, "abc"),
+      /missing required field: accountIdentity/,
+    );
+  });
+
+  it("fails for invalid timestamp", () => {
+    const badTimestamp: BrowserEvidenceManifest = {
+      headSha: "abc",
+      entries: [
+        {
+          ...validManifest.entries[0],
+          timestamp: "not-an-iso-date",
+        },
+      ],
+    };
+
+    assert.throws(
+      () => validateBrowserEvidence(badTimestamp, VALID_CONTRACT, "abc"),
+      /invalid timestamp/,
     );
   });
 });

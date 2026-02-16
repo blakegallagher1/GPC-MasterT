@@ -5,6 +5,8 @@ import {
   autoResolveBotThreads,
 } from "./auto-resolve.js";
 import {
+  normalizeReviewFindings,
+  adjudicateFindings,
   filterCurrentFindings,
   runRemediationLoop,
 } from "./remediation-loop.js";
@@ -93,32 +95,162 @@ describe("autoResolveBotThreads", () => {
 /*  Remediation loop                                                   */
 /* ------------------------------------------------------------------ */
 
+describe("normalizeReviewFindings", () => {
+  it("normalizes provider specific findings into the shared schema", () => {
+    const normalized = normalizeReviewFindings([
+      {
+        provider: "security-reviewer",
+        findings: [
+          {
+            file: "auth.ts",
+            line: 12,
+            message: "Potential token leakage",
+            severity: "high",
+            confidence: "high",
+            category: "security",
+            headSha: "abc",
+          },
+        ],
+      },
+      {
+        provider: "style-reviewer",
+        findings: [
+          {
+            file: "auth.ts",
+            line: 12,
+            message: "Use consistent quote style",
+            headSha: "abc",
+          },
+        ],
+      },
+    ]);
+
+    assert.equal(normalized.length, 2);
+    assert.deepEqual(normalized[0].providers, ["security-reviewer"]);
+    assert.equal(normalized[1].severity, "medium");
+    assert.equal(normalized[1].confidence, "medium");
+    assert.equal(normalized[1].category, "other");
+  });
+});
+
+describe("adjudicateFindings", () => {
+  it("merges duplicate findings and keeps the highest severity/confidence variant", () => {
+    const findings: ReviewFinding[] = [
+      {
+        providers: ["style-reviewer"],
+        file: "src/a.ts",
+        line: 10,
+        message: "Avoid magic numbers",
+        severity: "low",
+        confidence: "low",
+        category: "style",
+        headSha: "abc",
+      },
+      {
+        providers: ["architecture-reviewer"],
+        file: "src/a.ts",
+        line: 10,
+        message: "Avoid   magic numbers",
+        severity: "medium",
+        confidence: "high",
+        category: "style",
+        headSha: "abc",
+      },
+      {
+        providers: ["security-reviewer"],
+        file: "src/b.ts",
+        line: 1,
+        message: "Unsanitized input",
+        severity: "critical",
+        confidence: "high",
+        category: "security",
+        headSha: "abc",
+      },
+    ];
+
+    const adjudicated = adjudicateFindings(findings);
+
+    assert.equal(adjudicated.length, 2);
+    assert.equal(adjudicated[0].file, "src/b.ts");
+    assert.deepEqual(adjudicated[1].providers, ["architecture-reviewer", "style-reviewer"]);
+    assert.equal(adjudicated[1].severity, "medium");
+    assert.equal(adjudicated[1].confidence, "high");
+  });
+});
+
 describe("filterCurrentFindings", () => {
   const findings: ReviewFinding[] = [
-    { file: "a.ts", line: 1, message: "err", severity: "error", headSha: "abc" },
-    { file: "b.ts", line: 2, message: "warn", severity: "warning", headSha: "abc" },
-    { file: "c.ts", line: 3, message: "old", severity: "error", headSha: "old" },
-    { file: "d.ts", line: 4, message: "note", severity: "info", headSha: "abc" },
+    {
+      providers: ["style-reviewer"],
+      file: "a.ts",
+      line: 1,
+      message: "style",
+      severity: "low",
+      confidence: "low",
+      category: "style",
+      headSha: "abc",
+    },
+    {
+      providers: ["security-reviewer"],
+      file: "b.ts",
+      line: 2,
+      message: "security",
+      severity: "high",
+      confidence: "high",
+      category: "security",
+      headSha: "abc",
+    },
+    {
+      providers: ["architecture-reviewer"],
+      file: "c.ts",
+      line: 3,
+      message: "old finding",
+      severity: "critical",
+      confidence: "high",
+      category: "architecture",
+      headSha: "old",
+    },
+    {
+      providers: ["style-reviewer"],
+      file: "d.ts",
+      line: 4,
+      message: "note",
+      severity: "info",
+      confidence: "medium",
+      category: "style",
+      headSha: "abc",
+    },
   ];
 
-  it("filters to current SHA and excludes info", () => {
+  it("filters to current SHA in multi-reviewer mode and excludes info", () => {
     const config: RemediationConfig = { pinModel: true, skipStaleComments: true, maxAttempts: 5 };
     const result = filterCurrentFindings(findings, "abc", config);
     assert.equal(result.length, 2);
+    assert.equal(result[0].providers[0], "security-reviewer");
     assert.ok(result.every((f) => f.headSha === "abc" && f.severity !== "info"));
   });
 
-  it("keeps stale when skipStaleComments is false", () => {
+  it("keeps stale findings when skipStaleComments is false", () => {
     const config: RemediationConfig = { pinModel: true, skipStaleComments: false, maxAttempts: 5 };
     const result = filterCurrentFindings(findings, "abc", config);
-    assert.equal(result.length, 3); // all non-info
+    assert.equal(result.length, 3);
+    assert.equal(result[0].headSha, "old");
   });
 });
 
 describe("runRemediationLoop", () => {
   it("applies fixes and validates", async () => {
     const findings: ReviewFinding[] = [
-      { file: "a.ts", line: 1, message: "err", severity: "error", headSha: "abc" },
+      {
+        providers: ["security-reviewer"],
+        file: "a.ts",
+        line: 1,
+        message: "err",
+        severity: "high",
+        confidence: "high",
+        category: "security",
+        headSha: "abc",
+      },
     ];
     const config: RemediationConfig = { pinModel: true, skipStaleComments: true, maxAttempts: 5 };
 
@@ -137,7 +269,16 @@ describe("runRemediationLoop", () => {
 
   it("records errors on validation failure", async () => {
     const findings: ReviewFinding[] = [
-      { file: "a.ts", line: 1, message: "err", severity: "error", headSha: "abc" },
+      {
+        providers: ["architecture-reviewer"],
+        file: "a.ts",
+        line: 1,
+        message: "err",
+        severity: "medium",
+        confidence: "high",
+        category: "architecture",
+        headSha: "abc",
+      },
     ];
     const config: RemediationConfig = { pinModel: true, skipStaleComments: true, maxAttempts: 5 };
 
@@ -154,23 +295,65 @@ describe("runRemediationLoop", () => {
     assert.equal(result.errors.length, 1);
   });
 
-  it("respects maxAttempts", async () => {
+  it("respects maxAttempts after adjudication", async () => {
     const findings: ReviewFinding[] = [
-      { file: "a.ts", line: 1, message: "e1", severity: "error", headSha: "abc" },
-      { file: "b.ts", line: 2, message: "e2", severity: "error", headSha: "abc" },
-      { file: "c.ts", line: 3, message: "e3", severity: "error", headSha: "abc" },
+      {
+        providers: ["style-reviewer"],
+        file: "a.ts",
+        line: 1,
+        message: "duplicate",
+        severity: "low",
+        confidence: "low",
+        category: "style",
+        headSha: "abc",
+      },
+      {
+        providers: ["architecture-reviewer"],
+        file: "a.ts",
+        line: 1,
+        message: "duplicate",
+        severity: "high",
+        confidence: "high",
+        category: "style",
+        headSha: "abc",
+      },
+      {
+        providers: ["security-reviewer"],
+        file: "b.ts",
+        line: 2,
+        message: "sql injection",
+        severity: "critical",
+        confidence: "high",
+        category: "security",
+        headSha: "abc",
+      },
+      {
+        providers: ["security-reviewer"],
+        file: "c.ts",
+        line: 3,
+        message: "old stale finding",
+        severity: "critical",
+        confidence: "high",
+        category: "security",
+        headSha: "old",
+      },
     ];
-    const config: RemediationConfig = { pinModel: true, skipStaleComments: true, maxAttempts: 2 };
+    const config: RemediationConfig = { pinModel: true, skipStaleComments: true, maxAttempts: 1 };
 
+    const targeted: string[] = [];
     const result = await runRemediationLoop({
       findings,
       currentHeadSha: "abc",
       config,
-      applyFix: async () => true,
+      applyFix: async (finding) => {
+        targeted.push(`${finding.file}:${finding.line}`);
+        return true;
+      },
       validate: async () => true,
     });
 
-    assert.equal(result.attempted, 2);
+    assert.equal(result.attempted, 1);
+    assert.deepEqual(targeted, ["b.ts:2"]);
     assert.ok(result.errors.some((e) => e.includes("max remediation")));
   });
 });

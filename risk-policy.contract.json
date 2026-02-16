@@ -8,7 +8,9 @@
       "packages/config/src/contract.ts",
       ".github/workflows/**"
     ],
-    "low": ["**"]
+    "low": [
+      "**"
+    ]
   },
   "mergePolicy": {
     "high": {
@@ -22,7 +24,10 @@
       "requireBrowserEvidence": true
     },
     "low": {
-      "requiredChecks": ["risk-policy-gate", "CI Pipeline"],
+      "requiredChecks": [
+        "risk-policy-gate",
+        "CI Pipeline"
+      ],
       "requireCodeReviewAgent": false,
       "requireBrowserEvidence": false
     }
@@ -36,7 +41,47 @@
     "requiredDocPaths": [
       "docs/playbooks/**",
       "docs/operating-model/**",
+      "docs/architecture/**",
       "observability/runbooks/**"
+    ],
+    "coverageByPathClass": [
+      {
+        "id": "workflow-or-policy-updates",
+        "triggerPaths": [
+          ".github/workflows/**",
+          "risk-policy.contract.json"
+        ],
+        "requiredDocPaths": [
+          "docs/playbooks/**",
+          "docs/operating-model/**"
+        ],
+        "reason": "Workflow and policy changes must keep operator process docs aligned."
+      },
+      {
+        "id": "agent-governance-updates",
+        "triggerPaths": [
+          "AGENTS.md",
+          "tools/review-loop/**",
+          "packages/config/src/**"
+        ],
+        "requiredDocPaths": [
+          "docs/operating-model/**",
+          "docs/architecture/**"
+        ],
+        "reason": "Control-plane governance changes require architecture and operating-model updates."
+      },
+      {
+        "id": "service-runtime-updates",
+        "triggerPaths": [
+          "apps/api/**",
+          "infra/**"
+        ],
+        "requiredDocPaths": [
+          "docs/architecture/**",
+          "observability/runbooks/**"
+        ],
+        "reason": "Runtime changes require architecture detail and corresponding runbook updates."
+      }
     ]
   },
   "browserEvidence": {
@@ -53,10 +98,28 @@
     "maxAgeDays": 7
   },
   "reviewAgent": {
-    "name": "Greptile",
-    "rerunWorkflow": "greptile-rerun.yml",
-    "autoResolveWorkflow": "greptile-auto-resolve-threads.yml",
-    "timeoutMinutes": 20
+    "name": "Reviewer Mesh",
+    "timeoutMinutes": 20,
+    "providers": [
+      {
+        "id": "style",
+        "name": "Style Reviewer",
+        "rerunWorkflow": "style-reviewer-rerun.yml",
+        "autoResolveWorkflow": "style-reviewer-auto-resolve-threads.yml"
+      },
+      {
+        "id": "security",
+        "name": "Security Reviewer",
+        "rerunWorkflow": "security-reviewer-rerun.yml",
+        "autoResolveWorkflow": "security-reviewer-auto-resolve-threads.yml"
+      },
+      {
+        "id": "architecture",
+        "name": "Architecture Reviewer",
+        "rerunWorkflow": "architecture-reviewer-rerun.yml",
+        "autoResolveWorkflow": "architecture-reviewer-auto-resolve-threads.yml"
+      }
+    ]
   },
   "remediationAgent": {
     "name": "Codex Action",

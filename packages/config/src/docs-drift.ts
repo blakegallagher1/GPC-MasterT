@@ -44,4 +44,23 @@ export function assertDocsDriftRules(
         requiredDocPaths.join(", "),
     );
   }
+
+  const classRules = contract.docsDriftRules.coverageByPathClass ?? [];
+  for (const rule of classRules) {
+    const triggered = changedFiles.some((f) => matchesAny(f, rule.triggerPaths));
+    if (!triggered) {
+      continue;
+    }
+
+    const classDocsUpdated = changedFiles.some((f) =>
+      matchesAny(f, rule.requiredDocPaths),
+    );
+
+    if (!classDocsUpdated) {
+      throw new Error(
+        `Docs coverage requirement '${rule.id}' not satisfied. ${rule.reason} ` +
+          `Update at least one documentation file matching: ${rule.requiredDocPaths.join(", ")}`,
+      );
+    }
+  }
 }

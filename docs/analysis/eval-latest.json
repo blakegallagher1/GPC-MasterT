@@ -1,0 +1,53 @@
+{
+  "suite": "core-agent-benchmarks",
+  "generatedAt": "2026-02-16T21:03:09.932Z",
+  "metrics": {
+    "passRate": 1,
+    "retriesToSuccess": 0.5,
+    "policyViolations": 3,
+    "meanTaskDurationMs": 402.5,
+    "regressionDelta": 0.01
+  },
+  "taskResults": [
+    {
+      "id": "bug-fix-cache-invalidation",
+      "category": "bug-fix",
+      "passed": true,
+      "attempts": 2,
+      "retries": 1,
+      "finalDurationMs": 510,
+      "policyViolations": 1,
+      "regressionDelta": 0.01
+    },
+    {
+      "id": "refactor-task-runner-modules",
+      "category": "refactor",
+      "passed": true,
+      "attempts": 1,
+      "retries": 0,
+      "finalDurationMs": 460,
+      "policyViolations": 0,
+      "regressionDelta": 0.02
+    },
+    {
+      "id": "policy-compliance-risk-tier",
+      "category": "policy-compliance",
+      "passed": true,
+      "attempts": 2,
+      "retries": 1,
+      "finalDurationMs": 430,
+      "policyViolations": 2,
+      "regressionDelta": 0
+    },
+    {
+      "id": "docs-update-api-runbook",
+      "category": "docs-update",
+      "passed": true,
+      "attempts": 1,
+      "retries": 0,
+      "finalDurationMs": 210,
+      "policyViolations": 0,
+      "regressionDelta": 0.01
+    }
+  ]
+}

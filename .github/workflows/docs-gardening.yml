@@ -1,0 +1,53 @@
+name: docs-gardening
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  docs-gardening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run docs integrity checker and refresh stale report
+        run: |
+          pnpm dlx tsx scripts/check-docs-integrity.ts \
+            --max-age-days 90 \
+            --report docs/analysis/stale-docs-report.md || true
+
+      - name: Create docs-gardening pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: automation/docs-gardening
+          title: "docs: weekly gardening for stale documentation"
+          commit-message: "docs: refresh stale-docs report"
+          body: |
+            ## Summary
+            - ran `scripts/check-docs-integrity.ts`
+            - refreshed stale docs report
+            - opens a weekly gardening PR when stale docs or integrity drift is detected
+
+            ## Rollback
+            - close this PR with no merge if no documentation updates are desired this week
+          labels: |
+            documentation
+            maintenance
+          add-paths: |
+            docs/analysis/stale-docs-report.md
+            docs/QUALITY_SCORE.md

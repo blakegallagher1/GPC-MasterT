@@ -2,38 +2,53 @@
 set -euo pipefail
 
 # harness-ui-pre-pr.sh — Capture and verify browser evidence before PR.
-#
-# Usage:
-#   npm run harness:ui:pre-pr
-#
-# This script orchestrates browser evidence capture and verification
-# for UI/flow changes. It wraps the capture and verify steps so they
-# can be run as a single pre-PR gate.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
 
-echo "=== Browser Evidence Pre-PR Gate ==="
-echo ""
-
-# Step 1: Capture browser evidence (placeholder — requires actual browser harness)
-echo "Step 1: Capturing browser evidence..."
-if command -v npm &>/dev/null && npm run --silent harness:ui:capture-browser-evidence 2>/dev/null; then
-  echo "  Browser evidence captured successfully"
+if git rev-parse --verify origin/main >/dev/null 2>&1; then
+  DIFF_BASE="origin/main...HEAD"
 else
-  echo "  [SKIP] Browser evidence capture not yet configured"
-  echo "  To enable, implement: npm run harness:ui:capture-browser-evidence"
+  DIFF_BASE="HEAD~1"
 fi
 
-echo ""
+CHANGED_FILES="$(git diff --name-only "$DIFF_BASE" 2>/dev/null || true)"
 
-# Step 2: Verify browser evidence
-echo "Step 2: Verifying browser evidence..."
-if command -v npm &>/dev/null && npm run --silent harness:ui:verify-browser-evidence 2>/dev/null; then
-  echo "  Browser evidence verified successfully"
+RISK_TIER="$(CHANGED_FILES="$CHANGED_FILES" node --input-type=module <<'NODE'
+import { readFileSync } from 'node:fs';
+
+const files = (process.env.CHANGED_FILES ?? '').split(/\n+/).map((value) => value.trim()).filter(Boolean);
+const contract = JSON.parse(readFileSync('risk-policy.contract.json', 'utf8'));
+
+function globToRegExp(pattern) {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*\//g, '.*')
+    .replace(/\*\*/g, '.*')
+    .replace(/\*/g, '[^/]*');
+  return new RegExp(`^${escaped}$`);
+}
+
+const isHigh = files.some((file) => contract.riskTierRules.high.some((pattern) => globToRegExp(pattern).test(file)));
+process.stdout.write(isHigh ? 'high' : 'low');
+NODE
+)"
+
+echo "=== Browser Evidence Pre-PR Gate (${RISK_TIER}) ==="
+
+if [[ "$RISK_TIER" == "high" ]]; then
+  echo "High-risk diff detected; browser evidence is mandatory."
+  npm run harness:ui:capture-browser-evidence
+  npm run harness:ui:verify-browser-evidence
+  echo "Browser evidence captured and verified."
 else
-  echo "  [SKIP] Browser evidence verification not yet configured"
-  echo "  To enable, implement: npm run harness:ui:verify-browser-evidence"
+  echo "Low-risk diff detected; browser evidence capture is optional."
+  if npm run --silent harness:ui:capture-browser-evidence; then
+    npm run --silent harness:ui:verify-browser-evidence
+    echo "Optional browser evidence captured and verified."
+  else
+    echo "No optional browser evidence captured for low-risk diff."
+  fi
 fi
 
-echo ""
 echo "=== Browser Evidence Pre-PR Gate Complete ==="

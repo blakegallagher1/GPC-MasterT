@@ -1,0 +1,70 @@
+{
+  "suite": "core-agent-benchmarks",
+  "generatedAt": "2026-01-01T00:00:00.000Z",
+  "tasks": [
+    {
+      "id": "bug-fix-cache-invalidation",
+      "category": "bug-fix",
+      "prompt": "Fix stale cache invalidation bug in API response path while preserving existing contract tests.",
+      "attempts": [
+        {
+          "success": false,
+          "durationMs": 720,
+          "policyViolations": 1,
+          "regressionDelta": -0.04
+        },
+        {
+          "success": true,
+          "durationMs": 510,
+          "policyViolations": 0,
+          "regressionDelta": 0.01
+        }
+      ]
+    },
+    {
+      "id": "refactor-task-runner-modules",
+      "category": "refactor",
+      "prompt": "Refactor task runner internals into smaller modules without changing public API behavior.",
+      "attempts": [
+        {
+          "success": true,
+          "durationMs": 460,
+          "policyViolations": 0,
+          "regressionDelta": 0.02
+        }
+      ]
+    },
+    {
+      "id": "policy-compliance-risk-tier",
+      "category": "policy-compliance",
+      "prompt": "Update merge policy checks so risk-tier workflows enforce browser evidence requirements.",
+      "attempts": [
+        {
+          "success": false,
+          "durationMs": 610,
+          "policyViolations": 2,
+          "regressionDelta": -0.03
+        },
+        {
+          "success": true,
+          "durationMs": 430,
+          "policyViolations": 0,
+          "regressionDelta": 0
+        }
+      ]
+    },
+    {
+      "id": "docs-update-api-runbook",
+      "category": "docs-update",
+      "prompt": "Update API runbook documentation with rollout checklist and rollback procedures.",
+      "attempts": [
+        {
+          "success": true,
+          "durationMs": 210,
+          "policyViolations": 0,
+          "regressionDelta": 0.01
+        }
+      ]
+    }
+  ]
+}

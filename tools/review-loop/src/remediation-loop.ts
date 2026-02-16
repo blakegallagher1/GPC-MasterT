@@ -20,12 +20,43 @@
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
+export type FindingSeverity = "critical" | "high" | "medium" | "low" | "info";
+export type FindingConfidence = "high" | "medium" | "low";
+export type FindingCategory =
+  | "style"
+  | "security"
+  | "architecture"
+  | "correctness"
+  | "performance"
+  | "maintainability"
+  | "other";
+
 export interface ReviewFinding {
+  providers: string[];
   file: string;
   line: number;
   message: string;
-  severity: "error" | "warning" | "info";
+  severity: FindingSeverity;
+  confidence: FindingConfidence;
+  category: FindingCategory;
   headSha: string;
+  fingerprint?: string;
+}
+
+export interface ReviewerFindingInput {
+  file: string;
+  line: number;
+  message: string;
+  severity?: FindingSeverity;
+  confidence?: FindingConfidence;
+  category?: FindingCategory;
+  headSha: string;
+  fingerprint?: string;
+}
+
+export interface ReviewerProviderFindings {
+  provider: string;
+  findings: ReviewerFindingInput[];
 }
 
 export interface RemediationConfig {
@@ -41,6 +72,100 @@ export interface RemediationResult {
   errors: string[];
 }
 
+const SEVERITY_RANK: Record<FindingSeverity, number> = {
+  critical: 5,
+  high: 4,
+  medium: 3,
+  low: 2,
+  info: 1,
+};
+
+const CONFIDENCE_RANK: Record<FindingConfidence, number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+/* ------------------------------------------------------------------ */
+/*  Normalization + adjudication                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Normalize provider-specific findings into a shared schema.
+ */
+export function normalizeReviewFindings(
+  providers: ReviewerProviderFindings[],
+): ReviewFinding[] {
+  return providers.flatMap(({ provider, findings }) =>
+    findings.map((finding) => ({
+      providers: [provider],
+      file: finding.file,
+      line: finding.line,
+      message: finding.message,
+      severity: finding.severity ?? "medium",
+      confidence: finding.confidence ?? "medium",
+      category: finding.category ?? "other",
+      headSha: finding.headSha,
+      fingerprint: finding.fingerprint,
+    })),
+  );
+}
+
+function findingPriority(finding: Pick<ReviewFinding, "severity" | "confidence">): number {
+  return SEVERITY_RANK[finding.severity] * 10 + CONFIDENCE_RANK[finding.confidence];
+}
+
+function buildDuplicateKey(finding: ReviewFinding): string {
+  if (finding.fingerprint) {
+    return finding.fingerprint;
+  }
+  const normalizedMessage = finding.message.trim().toLowerCase().replace(/\s+/g, " ");
+  return `${finding.file}:${finding.line}:${finding.category}:${normalizedMessage}`;
+}
+
+/**
+ * Merge duplicate findings emitted by different reviewers and sort by
+ * highest remediation priority (severity + confidence).
+ */
+export function adjudicateFindings(findings: ReviewFinding[]): ReviewFinding[] {
+  const merged = new Map<string, ReviewFinding>();
+
+  for (const finding of findings) {
+    const key = buildDuplicateKey(finding);
+    const existing = merged.get(key);
+    if (!existing) {
+      merged.set(key, { ...finding, providers: [...finding.providers] });
+      continue;
+    }
+
+    const winner = findingPriority(finding) > findingPriority(existing) ? finding : existing;
+
+    merged.set(key, {
+      ...winner,
+      providers: Array.from(new Set([...existing.providers, ...finding.providers])).sort(),
+      fingerprint: existing.fingerprint ?? finding.fingerprint,
+    });
+  }
+
+  return Array.from(merged.values()).sort((a, b) => {
+    const severityDelta = SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity];
+    if (severityDelta !== 0) {
+      return severityDelta;
+    }
+
+    const confidenceDelta = CONFIDENCE_RANK[b.confidence] - CONFIDENCE_RANK[a.confidence];
+    if (confidenceDelta !== 0) {
+      return confidenceDelta;
+    }
+
+    if (a.file !== b.file) {
+      return a.file.localeCompare(b.file);
+    }
+
+    return a.line - b.line;
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Public API                                                         */
 /* ------------------------------------------------------------------ */
@@ -54,12 +179,12 @@ export function filterCurrentFindings(
   currentHeadSha: string,
   config: RemediationConfig,
 ): ReviewFinding[] {
-  if (!config.skipStaleComments) {
-    return findings.filter((f) => f.severity !== "info");
-  }
-  return findings.filter(
-    (f) => f.headSha === currentHeadSha && f.severity !== "info",
-  );
+  const withoutInformational = findings.filter((f) => f.severity !== "info");
+  const freshFindings = config.skipStaleComments
+    ? withoutInformational.filter((f) => f.headSha === currentHeadSha)
+    : withoutInformational;
+
+  return adjudicateFindings(freshFindings);
 }
 
 /**
