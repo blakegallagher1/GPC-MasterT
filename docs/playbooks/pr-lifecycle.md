@@ -16,6 +16,11 @@
 6. If actionable findings exist, remediate in-branch and rerun deterministically.
 7. Merge after all required checks pass and rollout steps are documented.
 
+## CI security
+
+The `ci.yml` workflow uses `permissions: contents: read` (least-privilege) to
+limit the `GITHUB_TOKEN` scope for all jobs.
+
 ## Harness gap loop
 
 When production regressions occur:
